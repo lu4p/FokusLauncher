@@ -132,10 +132,7 @@ private fun SelectableAppItem(
     ) {
         app.icon?.let {
             androidx.compose.foundation.Image(
-                bitmap = android.graphics.drawable.BitmapDrawable(
-                    LocalContext.current.resources,
-                    it.toBitmap()
-                ).bitmap.asImageBitmap(),
+                bitmap = it.toBitmap().asImageBitmap(),
                 contentDescription = null,
                 modifier = Modifier.size(40.dp)
             )
