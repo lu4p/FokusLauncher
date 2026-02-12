@@ -72,8 +72,6 @@ To run unit tests:
 
 The debug APK is generated at `app/build/outputs/apk/debug/`.
 
-For GitHub Copilot guidance, see [.github/copilot-instructions.md](.github/copilot-instructions.md).
-
 ## Project Stack
 
 The app is written in Kotlin with Jetpack Compose and Material 3 for UI, Hilt
