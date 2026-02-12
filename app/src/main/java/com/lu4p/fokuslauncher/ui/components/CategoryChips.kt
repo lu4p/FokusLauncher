@@ -38,37 +38,59 @@ fun CategoryChips(
     ) {
         categories.forEach { category ->
             val isSelected = category == selectedCategory
-            FilterChip(
-                selected = isSelected,
-                onClick = { onCategorySelected(category) },
-                label = {
-                    Text(
-                        text = category,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                },
-                shape = RoundedCornerShape(20.dp),
-                colors = FilterChipDefaults.filterChipColors(
-                    containerColor = ChipBackground,
-                    selectedContainerColor = ChipSelectedBackground,
-                    labelColor = MaterialTheme.colorScheme.onSurface,
-                    selectedLabelColor = MaterialTheme.colorScheme.onSurface
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                    selectedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                    enabled = true,
-                    selected = isSelected
-                ),
-                modifier = if (onCategoryLongPress != null) {
-                    Modifier.combinedClickable(
+            if (onCategoryLongPress != null) {
+                FilterChip(
+                    selected = isSelected,
+                    onClick = {},  // handled by combinedClickable
+                    label = {
+                        Text(
+                            text = category,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = ChipBackground,
+                        selectedContainerColor = ChipSelectedBackground,
+                        labelColor = MaterialTheme.colorScheme.onSurface,
+                        selectedLabelColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                        selectedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        enabled = true,
+                        selected = isSelected
+                    ),
+                    modifier = Modifier.combinedClickable(
                         onClick = { onCategorySelected(category) },
                         onLongClick = { onCategoryLongPress(category) }
                     )
-                } else {
-                    Modifier
-                }
-            )
+                )
+            } else {
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { onCategorySelected(category) },
+                    label = {
+                        Text(
+                            text = category,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = ChipBackground,
+                        selectedContainerColor = ChipSelectedBackground,
+                        labelColor = MaterialTheme.colorScheme.onSurface,
+                        selectedLabelColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                        selectedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        enabled = true,
+                        selected = isSelected
+                    )
+                )
+            }
         }
     }
 }

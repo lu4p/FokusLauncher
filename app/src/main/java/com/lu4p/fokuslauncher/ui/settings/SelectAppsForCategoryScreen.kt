@@ -148,7 +148,7 @@ private fun SelectableAppItem(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground
             )
-            if (app.category.isNotEmpty() && app.category != "Private") {
+            if (app.category.isNotEmpty() && app.category != CategoryConstants.PRIVATE) {
                 Text(
                     text = "Currently in: ${app.category}",
                     style = MaterialTheme.typography.bodySmall,
