@@ -1,5 +1,7 @@
 package com.lu4p.fokuslauncher.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -19,11 +21,13 @@ import com.lu4p.fokuslauncher.ui.theme.ChipSelectedBackground
 /**
  * Horizontal scrollable row of category filter chips.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CategoryChips(
     categories: List<String>,
     selectedCategory: String,
     onCategorySelected: (String) -> Unit,
+    onCategoryLongPress: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -40,7 +44,15 @@ fun CategoryChips(
                 label = {
                     Text(
                         text = category,
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = if (onCategoryLongPress != null) {
+                            Modifier.combinedClickable(
+                                onClick = { onCategorySelected(category) },
+                                onLongClick = { onCategoryLongPress(category) }
+                            )
+                        } else {
+                            Modifier
+                        }
                     )
                 },
                 shape = RoundedCornerShape(20.dp),

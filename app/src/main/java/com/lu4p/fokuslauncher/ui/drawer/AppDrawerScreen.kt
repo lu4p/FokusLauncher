@@ -73,6 +73,7 @@ fun AppDrawerScreen(
             uiState = uiState,
             onSearchQueryChanged = viewModel::onSearchQueryChanged,
             onCategorySelected = viewModel::onCategorySelected,
+            onCategoryLongPress = viewModel::onCategoryLongPress,
             onAppClick = { target ->
                 viewModel.launchTarget(target)
                 closeAndReset()
@@ -102,6 +103,31 @@ fun AppDrawerScreen(
                 isOnHomeScreen = app.packageName in uiState.favoritePackageNames
         )
     }
+
+    // Category action sheet on long-press
+    uiState.selectedCategoryForAction?.let { categoryName ->
+        CategoryActionSheet(
+                categoryName = categoryName,
+                onDismiss = viewModel::dismissCategoryActionSheet,
+                onRename = { newName ->
+                    viewModel.renameCategory(categoryName, newName) { success, _ ->
+                        if (success) {
+                            viewModel.dismissCategoryActionSheet()
+                        }
+                    }
+                },
+                onEditApps = {
+                    // Navigate to settings to edit category
+                    viewModel.dismissCategoryActionSheet()
+                    onSettingsClick()
+                },
+                onDelete = {
+                    viewModel.deleteCategory(categoryName)
+                    viewModel.dismissCategoryActionSheet()
+                },
+                canDelete = categoryName != "All apps" && categoryName != "Private"
+        )
+    }
 }
 
 @Composable
@@ -109,6 +135,7 @@ fun AppDrawerContent(
         uiState: AppDrawerUiState,
         onSearchQueryChanged: (String) -> Unit,
         onCategorySelected: (String) -> Unit,
+        onCategoryLongPress: (String) -> Unit = {},
         onAppClick: (LaunchTarget) -> Unit,
         onAppLongPress: (AppInfo) -> Unit = {},
         onMenuToggle: () -> Unit = {},
@@ -227,6 +254,7 @@ fun AppDrawerContent(
                 categories = uiState.categories,
                 selectedCategory = uiState.selectedCategory,
                 onCategorySelected = onCategorySelected,
+                onCategoryLongPress = onCategoryLongPress,
                 modifier = Modifier.testTag("category_chips")
         )
 

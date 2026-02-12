@@ -49,6 +49,9 @@ import com.lu4p.fokuslauncher.ui.drawer.AppDrawerScreen
 import com.lu4p.fokuslauncher.ui.home.HomeScreen
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
 import com.lu4p.fokuslauncher.ui.onboarding.OnboardingScreen
+import com.lu4p.fokuslauncher.ui.settings.EditCategoryScreen
+import com.lu4p.fokuslauncher.ui.settings.ManageCategoriesScreen
+import com.lu4p.fokuslauncher.ui.settings.SelectAppsForCategoryScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsScreen
 import kotlinx.coroutines.delay
 import kotlin.math.abs
@@ -57,6 +60,9 @@ object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
     const val ONBOARDING = "onboarding"
+    const val MANAGE_CATEGORIES = "manage_categories"
+    const val EDIT_CATEGORY = "edit_category"
+    const val SELECT_APPS_FOR_CATEGORY = "select_apps_for_category"
 }
 
 private const val SWIPE_THRESHOLD = 200f
@@ -266,7 +272,65 @@ fun FokusNavGraph(
                             ?.savedStateHandle
                             ?.set("openEditShortcutsOverlay", true)
                         navController.popBackStack()
+                    },
+                    onManageCategories = {
+                        navController.navigate(Routes.MANAGE_CATEGORIES) { launchSingleTop = true }
                     }
+                )
+            }
+
+            // =====================  MANAGE CATEGORIES  =====================
+            composable(
+                Routes.MANAGE_CATEGORIES,
+                enterTransition = {
+                    slideInHorizontally(tween(ANIM_DURATION)) { it }
+                },
+                exitTransition = {
+                    slideOutHorizontally(tween(ANIM_DURATION)) { it }
+                }
+            ) {
+                ManageCategoriesScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onEditCategory = { categoryName ->
+                        navController.navigate("${Routes.EDIT_CATEGORY}/$categoryName") { launchSingleTop = true }
+                    }
+                )
+            }
+
+            // =====================  EDIT CATEGORY  =====================
+            composable(
+                route = "${Routes.EDIT_CATEGORY}/{categoryName}",
+                enterTransition = {
+                    slideInHorizontally(tween(ANIM_DURATION)) { it }
+                },
+                exitTransition = {
+                    slideOutHorizontally(tween(ANIM_DURATION)) { it }
+                }
+            ) { backStackEntry ->
+                val categoryName = backStackEntry.arguments?.getString("categoryName") ?: return@composable
+                EditCategoryScreen(
+                    categoryName = categoryName,
+                    onNavigateBack = { navController.popBackStack() },
+                    onSelectApps = { category ->
+                        navController.navigate("${Routes.SELECT_APPS_FOR_CATEGORY}/$category") { launchSingleTop = true }
+                    }
+                )
+            }
+
+            // =====================  SELECT APPS FOR CATEGORY  =====================
+            composable(
+                route = "${Routes.SELECT_APPS_FOR_CATEGORY}/{categoryName}",
+                enterTransition = {
+                    slideInHorizontally(tween(ANIM_DURATION)) { it }
+                },
+                exitTransition = {
+                    slideOutHorizontally(tween(ANIM_DURATION)) { it }
+                }
+            ) { backStackEntry ->
+                val categoryName = backStackEntry.arguments?.getString("categoryName") ?: return@composable
+                SelectAppsForCategoryScreen(
+                    categoryName = categoryName,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }

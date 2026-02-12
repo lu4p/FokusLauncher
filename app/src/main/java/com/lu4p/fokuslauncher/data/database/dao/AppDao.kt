@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
+import com.lu4p.fokuslauncher.data.database.entity.CategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import kotlinx.coroutines.flow.Flow
@@ -71,4 +72,24 @@ interface AppDao {
 
     @Query("DELETE FROM app_categories")
     suspend fun clearAllAppCategories()
+
+    // --- Custom Categories ---
+
+    @Query("SELECT * FROM categories ORDER BY sortOrder ASC, name ASC")
+    fun getAllCategories(): Flow<List<CategoryEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCategory(entity: CategoryEntity)
+
+    @Delete
+    suspend fun deleteCategory(entity: CategoryEntity)
+
+    @Query("DELETE FROM categories WHERE name = :categoryName")
+    suspend fun deleteCategoryByName(categoryName: String)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM categories WHERE name = :categoryName)")
+    suspend fun categoryExists(categoryName: String): Boolean
+
+    @Query("DELETE FROM app_categories WHERE category = :categoryName")
+    suspend fun removeAllAppsFromCategory(categoryName: String)
 }

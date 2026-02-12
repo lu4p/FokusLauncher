@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Process
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
+import com.lu4p.fokuslauncher.data.database.entity.CategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.model.AppInfo
@@ -18,6 +19,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 
 /**
  * Repository responsible for loading and caching installed apps from the system, and managing
@@ -240,6 +242,42 @@ constructor(@ApplicationContext private val context: Context, private val appDao
 
     /** Returns the assigned category for an app, or null. */
     suspend fun getAppCategory(packageName: String): String? = appDao.getAppCategory(packageName)
+
+    // --- Custom Categories ---
+
+    /** Returns a Flow of all custom categories. */
+    fun getAllCategories(): Flow<List<CategoryEntity>> = appDao.getAllCategories()
+
+    /** Creates a new custom category. */
+    suspend fun createCategory(name: String, sortOrder: Int = 0) {
+        appDao.insertCategory(CategoryEntity(name, isCustom = true, sortOrder = sortOrder))
+    }
+
+    /** Renames a category by updating all app assignments and the category entity. */
+    suspend fun renameCategory(oldName: String, newName: String) {
+        // Get all apps with the old category
+        val apps = appDao.getAppsByCategory(oldName).first()
+        
+        // Delete the old category entity
+        appDao.deleteCategoryByName(oldName)
+        
+        // Create the new category entity
+        appDao.insertCategory(CategoryEntity(newName, isCustom = true, sortOrder = 0))
+        
+        // Update all app assignments
+        apps.forEach { app ->
+            appDao.setAppCategory(AppCategoryEntity(app.packageName, newName))
+        }
+    }
+
+    /** Deletes a category and removes all app assignments to it. */
+    suspend fun deleteCategory(categoryName: String) {
+        appDao.deleteCategoryByName(categoryName)
+        appDao.removeAllAppsFromCategory(categoryName)
+    }
+
+    /** Checks if a category name already exists. */
+    suspend fun categoryExists(name: String): Boolean = appDao.categoryExists(name)
 
     /** Clears all app-specific data (hidden apps, renamed apps, categories). */
     suspend fun clearAllAppData() {

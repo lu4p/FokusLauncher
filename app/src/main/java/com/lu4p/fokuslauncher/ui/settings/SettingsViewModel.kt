@@ -2,6 +2,7 @@ package com.lu4p.fokuslauncher.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lu4p.fokuslauncher.data.database.entity.CategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
@@ -41,6 +42,8 @@ constructor(
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
+
+    val customCategories = appRepository.getAllCategories()
 
     init {
         loadAllApps()
@@ -230,6 +233,75 @@ constructor(
             preferencesManager.clearAll()
             appRepository.clearAllAppData()
             appRepository.invalidateCache()
+        }
+    }
+
+    // --- Category Management ---
+
+    fun createCategory(name: String, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val exists = appRepository.categoryExists(name)
+                if (exists) {
+                    onResult(false, "Category already exists")
+                } else {
+                    appRepository.createCategory(name)
+                    onResult(true, null)
+                }
+            } catch (e: Exception) {
+                onResult(false, e.message)
+            }
+        }
+    }
+
+    fun renameCategory(oldName: String, newName: String, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val exists = appRepository.categoryExists(newName)
+                if (exists && oldName != newName) {
+                    onResult(false, "Category already exists")
+                } else {
+                    appRepository.renameCategory(oldName, newName)
+                    onResult(true, null)
+                }
+            } catch (e: Exception) {
+                onResult(false, e.message)
+            }
+        }
+    }
+
+    fun deleteCategory(categoryName: String) {
+        viewModelScope.launch {
+            appRepository.deleteCategory(categoryName)
+        }
+    }
+
+    fun addAppToCategory(packageName: String, categoryName: String) {
+        viewModelScope.launch {
+            appRepository.setAppCategory(packageName, categoryName)
+            appRepository.invalidateCache()
+            loadAllApps()
+        }
+    }
+
+    fun removeAppFromCategory(packageName: String) {
+        viewModelScope.launch {
+            appRepository.removeAppCategory(packageName)
+            appRepository.invalidateCache()
+            loadAllApps()
+        }
+    }
+
+    fun getAppsInCategory(categoryName: String): kotlinx.coroutines.flow.Flow<List<AppInfo>> {
+        return kotlinx.coroutines.flow.flow {
+            appRepository.getAllAppCategories().collect { categories ->
+                val appsInCategory = categories
+                    .filter { it.category == categoryName }
+                    .mapNotNull { entity ->
+                        _uiState.value.allApps.find { it.packageName == entity.packageName }
+                    }
+                emit(appsInCategory)
+            }
         }
     }
 }

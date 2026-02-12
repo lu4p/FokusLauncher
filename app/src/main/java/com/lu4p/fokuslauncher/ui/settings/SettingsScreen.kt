@@ -62,7 +62,8 @@ fun SettingsScreen(
         viewModel: SettingsViewModel = hiltViewModel(),
         onNavigateBack: () -> Unit = {},
         onEditHomeScreen: () -> Unit = {},
-        onEditRightShortcuts: () -> Unit = {}
+        onEditRightShortcuts: () -> Unit = {},
+        onManageCategories: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -165,6 +166,28 @@ fun SettingsScreen(
                                 onClear = { viewModel.setPreferredWeatherApp("") }
                         )
                     }
+                }
+            }
+
+            item { SettingsDivider() }
+
+            // ========== CATEGORIES ==========
+            item { SectionHeader("Categories") }
+
+            item {
+                Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                                Modifier.fillMaxWidth()
+                                        .clickable(onClick = onManageCategories)
+                                        .padding(horizontal = 24.dp, vertical = 14.dp)
+                ) {
+                    Text(
+                            text = "Manage categories",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.weight(1f)
+                    )
                 }
             }
 

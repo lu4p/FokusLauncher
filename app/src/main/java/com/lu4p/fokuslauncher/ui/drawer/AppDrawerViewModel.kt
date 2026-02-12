@@ -29,6 +29,7 @@ data class AppDrawerUiState(
         val selectedCategory: String = "All apps",
         val categories: List<String> = listOf("All apps"),
         val selectedApp: AppInfo? = null,
+        val selectedCategoryForAction: String? = null,
         val showMenu: Boolean = false,
         val isPrivateSpaceSupported: Boolean = false,
         val isPrivateSpaceUnlocked: Boolean = false,
@@ -415,5 +416,41 @@ constructor(
                 }
         val mainTargets = mainApps.map { LaunchTarget.MainApp(it.packageName) }
         return privateTargets + mainTargets
+    }
+
+    // --- Category Management ---
+
+    fun onCategoryLongPress(categoryName: String) {
+        _uiState.update { it.copy(selectedCategoryForAction = categoryName) }
+    }
+
+    fun dismissCategoryActionSheet() {
+        _uiState.update { it.copy(selectedCategoryForAction = null) }
+    }
+
+    fun renameCategory(oldName: String, newName: String, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val exists = appRepository.categoryExists(newName)
+                if (exists && oldName != newName) {
+                    onResult(false, "Category already exists")
+                } else {
+                    appRepository.renameCategory(oldName, newName)
+                    appRepository.invalidateCache()
+                    loadApps()
+                    onResult(true, null)
+                }
+            } catch (e: Exception) {
+                onResult(false, e.message)
+            }
+        }
+    }
+
+    fun deleteCategory(categoryName: String) {
+        viewModelScope.launch {
+            appRepository.deleteCategory(categoryName)
+            appRepository.invalidateCache()
+            loadApps()
+        }
     }
 }
