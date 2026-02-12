@@ -22,6 +22,10 @@ Fokus Launcher is an Android launcher application designed for a minimal, clean 
 
 **CRITICAL:** Always use JDK 21. The project requires JDK 21 as specified in the GitHub Actions workflow. The `gradle/gradle-daemon-jvm.properties` file specifies a JetBrains JDK vendor, but in environments where this is not available (like CI with Temurin), the build may require toolchain auto-provisioning or manual JDK configuration.
 
+Android Studio is optional. The Gradle commands below are sufficient for builds
+and unit tests; use Android Studio only if you need the emulator, layout
+inspector, or Compose previews.
+
 ### Building the Project
 
 ```bash
