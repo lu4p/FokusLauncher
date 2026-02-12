@@ -27,40 +27,26 @@ class PackageChangeReceiver : BroadcastReceiver() {
         
         when (intent.action) {
             Intent.ACTION_PACKAGE_ADDED -> {
-                val pendingResult = goAsync()
-                val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-                
-                scope.launch {
-                    try {
-                        appRepository.onPackageAdded(packageName)
-                    } finally {
-                        pendingResult.finish()
-                    }
-                }
+                executeAsync { appRepository.onPackageAdded(packageName) }
             }
             Intent.ACTION_PACKAGE_REMOVED -> {
-                val pendingResult = goAsync()
-                val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-                
-                scope.launch {
-                    try {
-                        appRepository.onPackageRemoved(packageName)
-                    } finally {
-                        pendingResult.finish()
-                    }
-                }
+                executeAsync { appRepository.onPackageRemoved(packageName) }
             }
             Intent.ACTION_PACKAGE_CHANGED -> {
-                val pendingResult = goAsync()
-                val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-                
-                scope.launch {
-                    try {
-                        appRepository.onPackageChanged(packageName)
-                    } finally {
-                        pendingResult.finish()
-                    }
-                }
+                executeAsync { appRepository.onPackageChanged(packageName) }
+            }
+        }
+    }
+
+    private fun executeAsync(block: suspend () -> Unit) {
+        val pendingResult = goAsync()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+        
+        scope.launch {
+            try {
+                block()
+            } finally {
+                pendingResult.finish()
             }
         }
     }

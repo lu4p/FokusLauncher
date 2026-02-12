@@ -8,6 +8,7 @@ import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.repository.AppRepository
+import com.lu4p.fokuslauncher.data.repository.PackageChange
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import io.mockk.coVerify
 import io.mockk.every
@@ -43,7 +44,7 @@ class AppDrawerViewModelTest {
     private val renamedFlow = MutableStateFlow<List<RenamedAppEntity>>(emptyList())
     private val categoriesFlow = MutableStateFlow<List<AppCategoryEntity>>(emptyList())
     private val favoritesFlow = MutableStateFlow<List<FavoriteApp>>(emptyList())
-    private val packageChangesFlow = MutableSharedFlow<com.lu4p.fokuslauncher.data.repository.PackageChange>(replay = 0)
+    private val packageChangesFlow = MutableSharedFlow<PackageChange>(replay = 0)
 
     private val testApps =
             listOf(
@@ -353,7 +354,7 @@ class AppDrawerViewModelTest {
         verify(atLeast = 1) { appRepository.getInstalledApps() }
 
         // Emit a package change event
-        packageChangesFlow.emit(com.lu4p.fokuslauncher.data.repository.PackageChange.Removed("com.lu4p.test"))
+        packageChangesFlow.emit(PackageChange.Removed("com.lu4p.test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Verify apps are reloaded

@@ -287,7 +287,7 @@ class AppRepositoryTest {
 
         repository.getInstalledApps()
 
-        val events = mutableListOf<com.lu4p.fokuslauncher.data.repository.PackageChange>()
+        val events = mutableListOf<PackageChange>()
         val job = kotlinx.coroutines.launch(kotlinx.coroutines.Dispatchers.Unconfined) {
             repository.packageChanges.collect {
                 events.add(it)
@@ -297,8 +297,8 @@ class AppRepositoryTest {
         repository.onPackageRemoved("com.lu4p.app1")
 
         assertEquals(1, events.size)
-        assertTrue(events[0] is com.lu4p.fokuslauncher.data.repository.PackageChange.Removed)
-        assertEquals("com.lu4p.app1", (events[0] as com.lu4p.fokuslauncher.data.repository.PackageChange.Removed).packageName)
+        assertTrue(events[0] is PackageChange.Removed)
+        assertEquals("com.lu4p.app1", (events[0] as PackageChange.Removed).packageName)
         
         val apps = repository.getInstalledApps()
         assertEquals(1, apps.size)

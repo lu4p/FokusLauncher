@@ -104,19 +104,9 @@ constructor(@ApplicationContext private val context: Context, private val appDao
         }
         
         val resolveInfo = pm.queryIntentActivities(mainIntent, 0).firstOrNull()
-        if (resolveInfo != null && resolveInfo.activityInfo.packageName != context.packageName) {
-            val label = resolveInfo.loadLabel(pm).toString()
-            val newApp = AppInfo(
-                packageName = packageName,
-                label = label,
-                icon = try {
-                    resolveInfo.loadIcon(pm)
-                } catch (_: Exception) {
-                    null
-                },
-                category = inferCategory(packageName, label)
-            )
-            
+        val newApp = resolveInfo?.let { createAppInfoFromResolveInfo(it, packageName) }
+        
+        if (newApp != null) {
             cachedApps?.let { apps ->
                 cachedApps = (apps + newApp).sortedBy { it.label.lowercase() }
             }
@@ -146,19 +136,9 @@ constructor(@ApplicationContext private val context: Context, private val appDao
         }
         
         val resolveInfo = pm.queryIntentActivities(mainIntent, 0).firstOrNull()
-        if (resolveInfo != null && resolveInfo.activityInfo.packageName != context.packageName) {
-            val label = resolveInfo.loadLabel(pm).toString()
-            val updatedApp = AppInfo(
-                packageName = packageName,
-                label = label,
-                icon = try {
-                    resolveInfo.loadIcon(pm)
-                } catch (_: Exception) {
-                    null
-                },
-                category = inferCategory(packageName, label)
-            )
-            
+        val updatedApp = resolveInfo?.let { createAppInfoFromResolveInfo(it, packageName) }
+        
+        if (updatedApp != null) {
             cachedApps?.let { apps ->
                 cachedApps = apps.map { app ->
                     if (app.packageName == packageName) updatedApp else app
@@ -339,6 +319,27 @@ constructor(@ApplicationContext private val context: Context, private val appDao
         appDao.clearAllHiddenApps()
         appDao.clearAllRenamedApps()
         appDao.clearAllAppCategories()
+    }
+
+    /**
+     * Creates an AppInfo from a ResolveInfo and package name.
+     * Returns null if the app should be excluded (e.g., is this launcher).
+     */
+    private fun createAppInfoFromResolveInfo(resolveInfo: ResolveInfo, packageName: String): AppInfo? {
+        if (resolveInfo.activityInfo.packageName == context.packageName) return null
+        
+        val pm = context.packageManager
+        val label = resolveInfo.loadLabel(pm).toString()
+        return AppInfo(
+            packageName = packageName,
+            label = label,
+            icon = try {
+                resolveInfo.loadIcon(pm)
+            } catch (_: Exception) {
+                null
+            },
+            category = inferCategory(packageName, label)
+        )
     }
 
     private fun inferCategory(packageName: String, label: String): String {
