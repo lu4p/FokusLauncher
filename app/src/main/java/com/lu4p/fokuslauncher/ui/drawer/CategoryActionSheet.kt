@@ -42,7 +42,7 @@ fun CategoryActionSheet(
     onRename: (String) -> Unit,
     onEditApps: () -> Unit,
     onDelete: () -> Unit,
-    canDelete: Boolean = true
+    canEdit: Boolean = true
 ) {
     val sheetState = rememberModalBottomSheetState()
     var renameMode by remember(categoryName) { mutableStateOf(false) }
@@ -96,20 +96,20 @@ fun CategoryActionSheet(
 
             // Actions
             if (!renameMode) {
-                ActionRow(
-                    icon = Icons.Default.Edit,
-                    label = "Rename category",
-                    onClick = { renameMode = true }
-                )
-                ActionRow(
-                    icon = Icons.Default.Settings,
-                    label = "Edit apps in category",
-                    onClick = {
-                        onEditApps()
-                        onDismiss()
-                    }
-                )
-                if (canDelete) {
+                if (canEdit) {
+                    ActionRow(
+                        icon = Icons.Default.Edit,
+                        label = "Rename category",
+                        onClick = { renameMode = true }
+                    )
+                    ActionRow(
+                        icon = Icons.Default.Settings,
+                        label = "Edit apps in category",
+                        onClick = {
+                            onEditApps()
+                            onDismiss()
+                        }
+                    )
                     ActionRow(
                         icon = Icons.Default.Delete,
                         label = "Delete category",
@@ -118,6 +118,13 @@ fun CategoryActionSheet(
                             onDismiss()
                         },
                         isDestructive = true
+                    )
+                } else {
+                    Text(
+                        text = "This category cannot be modified",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
                     )
                 }
             }

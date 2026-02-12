@@ -106,6 +106,7 @@ fun AppDrawerScreen(
 
     // Category action sheet on long-press
     uiState.selectedCategoryForAction?.let { categoryName ->
+        val isSystemCategory = categoryName == "All apps" || categoryName == "Private"
         CategoryActionSheet(
                 categoryName = categoryName,
                 onDismiss = viewModel::dismissCategoryActionSheet,
@@ -125,7 +126,7 @@ fun AppDrawerScreen(
                     viewModel.deleteCategory(categoryName)
                     viewModel.dismissCategoryActionSheet()
                 },
-                canDelete = categoryName != "All apps" && categoryName != "Private"
+                canEdit = !isSystemCategory
         )
     }
 }
