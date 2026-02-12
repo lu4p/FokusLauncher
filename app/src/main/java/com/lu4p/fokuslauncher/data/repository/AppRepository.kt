@@ -18,6 +18,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 /**
  * Repository responsible for loading and caching installed apps from the system, and managing
@@ -28,6 +31,9 @@ class AppRepository
 @Inject
 constructor(@ApplicationContext private val context: Context, private val appDao: AppDao) {
     private var cachedApps: List<AppInfo>? = null
+    
+    private val _packageChanges = MutableSharedFlow<Unit>(replay = 0)
+    val packageChanges: SharedFlow<Unit> = _packageChanges.asSharedFlow()
 
     // --- App Loading ---
 
@@ -72,8 +78,9 @@ constructor(@ApplicationContext private val context: Context, private val appDao
     }
 
     /** Clears the cached app list, forcing a reload on next access. */
-    fun invalidateCache() {
+    suspend fun invalidateCache() {
         cachedApps = null
+        _packageChanges.emit(Unit)
     }
 
     /**

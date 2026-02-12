@@ -74,6 +74,7 @@ constructor(
         observeFavorites()
         refreshPrivateSpaceState()
         observePrivateSpaceChanges()
+        observePackageChanges()
     }
 
     private fun observeFavorites() {
@@ -84,6 +85,17 @@ constructor(
                         favoritePackageNames = favorites.map { it.packageName }.toSet()
                     )
                 }
+            }
+        }
+    }
+
+    /**
+     * Observes package installation/removal events and reloads the app list.
+     */
+    private fun observePackageChanges() {
+        viewModelScope.launch {
+            appRepository.packageChanges.collect {
+                loadApps()
             }
         }
     }
@@ -341,9 +353,10 @@ constructor(
     }
 
     fun refresh() {
-        appRepository.invalidateCache()
-        loadApps()
-        // observeHiddenAndRenamed will rebuild visible list automatically
+        viewModelScope.launch {
+            appRepository.invalidateCache()
+            // observePackageChanges will automatically reload apps
+        }
     }
 
     fun resetSearchState() {
