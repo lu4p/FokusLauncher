@@ -258,19 +258,25 @@ constructor(@ApplicationContext private val context: Context, private val appDao
     /**
      * Ensures predefined categories exist in the database.
      * This allows them to be managed (renamed/deleted) by users.
+     * Runs asynchronously to avoid blocking app initialization.
      */
-    suspend fun ensurePredefinedCategoriesExist() {
-        val existingCategories = appDao.getAllCategories().first().map { it.name }.toSet()
-        CategoryConstants.PREDEFINED_CATEGORIES.forEachIndexed { index, categoryName ->
-            if (categoryName !in existingCategories) {
-                appDao.insertCategory(
-                    CategoryEntity(
-                        name = categoryName,
-                        isCustom = false,  // Mark as predefined
-                        sortOrder = index
+    suspend fun ensurePredefinedCategoriesExist() = withContext(Dispatchers.IO) {
+        try {
+            val existingCategories = appDao.getAllCategories().first().map { it.name }.toSet()
+            CategoryConstants.PREDEFINED_CATEGORIES.forEachIndexed { index, categoryName ->
+                if (categoryName !in existingCategories) {
+                    appDao.insertCategory(
+                        CategoryEntity(
+                            name = categoryName,
+                            isCustom = false,  // Mark as predefined
+                            sortOrder = index
+                        )
                     )
-                )
+                }
             }
+        } catch (e: Exception) {
+            // Log error but don't crash - categories will be created later if needed
+            android.util.Log.e("AppRepository", "Failed to initialize predefined categories", e)
         }
     }
 
