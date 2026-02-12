@@ -76,6 +76,13 @@ constructor(
         observeFavorites()
         refreshPrivateSpaceState()
         observePrivateSpaceChanges()
+        ensurePredefinedCategories()
+    }
+    
+    private fun ensurePredefinedCategories() {
+        viewModelScope.launch {
+            appRepository.ensurePredefinedCategoriesExist()
+        }
     }
 
     private fun observeFavorites() {

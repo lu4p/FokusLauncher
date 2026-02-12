@@ -1,5 +1,7 @@
 package com.lu4p.fokuslauncher.ui.settings
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,7 +48,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.CategoryConstants
 import com.lu4p.fokuslauncher.utils.toBitmap
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun EditCategoryScreen(
     categoryName: String,
@@ -59,6 +61,9 @@ fun EditCategoryScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf(categoryName) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    
+    // Only system categories (All apps, Private) cannot be edited
+    val isSystemCategory = CategoryConstants.isSystemCategory(categoryName)
 
     Scaffold(
         topBar = {
@@ -74,23 +79,25 @@ fun EditCategoryScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        newName = categoryName
-                        errorMessage = null
-                        showRenameDialog = true
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Rename category",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                    IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete category",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
+                    if (!isSystemCategory) {
+                        IconButton(onClick = {
+                            newName = categoryName
+                            errorMessage = null
+                            showRenameDialog = true
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Rename category",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete category",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -238,15 +245,22 @@ fun EditCategoryScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AppInCategoryItem(
     app: AppInfo,
     onRemove: () -> Unit
 ) {
+    var showRemoveDialog by remember { mutableStateOf(false) }
+    
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .combinedClickable(
+                onClick = { /* Do nothing on single click */ },
+                onLongClick = { showRemoveDialog = true }
+            )
             .padding(horizontal = 24.dp, vertical = 12.dp)
             .testTag("app_item_${app.packageName}")
     ) {
@@ -271,5 +285,30 @@ private fun AppInCategoryItem(
                 tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )
         }
+    }
+    
+    if (showRemoveDialog) {
+        AlertDialog(
+            onDismissRequest = { showRemoveDialog = false },
+            title = { Text("Remove from category") },
+            text = {
+                Text("Remove ${app.label} from this category?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onRemove()
+                        showRemoveDialog = false
+                    }
+                ) {
+                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRemoveDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

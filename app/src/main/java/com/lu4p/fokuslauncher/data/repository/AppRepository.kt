@@ -254,6 +254,25 @@ constructor(@ApplicationContext private val context: Context, private val appDao
     suspend fun createCategory(name: String, sortOrder: Int = 0) {
         appDao.insertCategory(CategoryEntity(name, isCustom = true, sortOrder = sortOrder))
     }
+    
+    /**
+     * Ensures predefined categories exist in the database.
+     * This allows them to be managed (renamed/deleted) by users.
+     */
+    suspend fun ensurePredefinedCategoriesExist() {
+        val existingCategories = appDao.getAllCategories().first().map { it.name }.toSet()
+        CategoryConstants.PREDEFINED_CATEGORIES.forEachIndexed { index, categoryName ->
+            if (categoryName !in existingCategories) {
+                appDao.insertCategory(
+                    CategoryEntity(
+                        name = categoryName,
+                        isCustom = false,  // Mark as predefined
+                        sortOrder = index
+                    )
+                )
+            }
+        }
+    }
 
     /** Renames a category by updating all app assignments and the category entity. */
     suspend fun renameCategory(oldName: String, newName: String) {
