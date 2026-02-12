@@ -275,6 +275,21 @@ class AppRepositoryTest {
         assertEquals("Social", result)
     }
 
+    @Test
+    fun `invalidateCache emits package change event`() = runTest {
+        val events = mutableListOf<Unit>()
+        val job = kotlinx.coroutines.launch(kotlinx.coroutines.Dispatchers.Unconfined) {
+            repository.packageChanges.collect {
+                events.add(it)
+            }
+        }
+
+        repository.invalidateCache()
+
+        assertEquals(1, events.size)
+        job.cancel()
+    }
+
     // --- Helper ---
 
     private fun createResolveInfo(packageName: String, label: String): ResolveInfo {

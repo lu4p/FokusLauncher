@@ -15,6 +15,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -42,6 +43,7 @@ class AppDrawerViewModelTest {
     private val renamedFlow = MutableStateFlow<List<RenamedAppEntity>>(emptyList())
     private val categoriesFlow = MutableStateFlow<List<AppCategoryEntity>>(emptyList())
     private val favoritesFlow = MutableStateFlow<List<FavoriteApp>>(emptyList())
+    private val packageChangesFlow = MutableSharedFlow<Unit>(replay = 0)
 
     private val testApps =
             listOf(
@@ -65,6 +67,7 @@ class AppDrawerViewModelTest {
         every { appRepository.getHiddenPackageNames() } returns hiddenFlow
         every { appRepository.getAllRenamedApps() } returns renamedFlow
         every { appRepository.getAllAppCategories() } returns categoriesFlow
+        every { appRepository.packageChanges } returns packageChangesFlow
         every { preferencesManager.favoritesFlow } returns favoritesFlow
         every { privateSpaceManager.isSupported } returns false
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns false
@@ -342,5 +345,19 @@ class AppDrawerViewModelTest {
         assertFalse(state.isPrivateSpaceUnlocked)
         assertTrue(state.privateSpaceApps.isEmpty())
         assertFalse(state.showMenu)
+    }
+
+    @Test
+    fun `package changes trigger app list reload`() = runTest {
+        // Initial load happens in setup
+        verify(atLeast = 1) { appRepository.getInstalledApps() }
+
+        // Emit a package change event
+        packageChangesFlow.emit(Unit)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Verify apps are reloaded
+        verify(atLeast = 2) { appRepository.getInstalledApps() }
+    }
     }
 }
