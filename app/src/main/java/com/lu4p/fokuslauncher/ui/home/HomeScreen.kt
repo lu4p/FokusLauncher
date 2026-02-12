@@ -88,6 +88,7 @@ fun HomeScreen(
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshInstalledApps()
                 viewModel.recheckDefaultLauncher()
                 viewModel.refreshWeather()
             }
@@ -466,4 +467,3 @@ private fun WeatherAppPickerDialog(
         containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }
-
