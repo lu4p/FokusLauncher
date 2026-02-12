@@ -50,11 +50,11 @@ fun CategoryChips(
             
             FilterChip(
                 selected = isSelected,
-                onClick = { 
-                    if (onCategoryLongPress == null) {
-                        onCategorySelected(category)
-                    }
-                    // If onCategoryLongPress is set, clicks are handled by combinedClickable
+                // When combinedClickable is handling clicks, disable FilterChip's onClick to avoid conflicts
+                onClick = if (onCategoryLongPress == null) {
+                    { onCategorySelected(category) }
+                } else {
+                    {} // No-op: clicks handled by combinedClickable modifier
                 },
                 label = {
                     Text(

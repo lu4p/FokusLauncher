@@ -120,21 +120,31 @@ constructor(
                             appRepository.getAllAppCategories(),
                             appRepository.getAllCategories()
                     ) { hiddenNames, renamedApps, appCategories, customCategories ->
-                Quadruple(
-                        hiddenNames.toSet(),
-                        renamedApps.associate { it.packageName to it.customName },
-                        appCategories.associate { it.packageName to it.category },
-                        customCategories.map { it.name }.toSet()
+                AppOverlays(
+                        hiddenPackages = hiddenNames.toSet(),
+                        renames = renamedApps.associate { it.packageName to it.customName },
+                        categoryAssignments = appCategories.associate { it.packageName to it.category },
+                        availableCategories = customCategories.map { it.name }.toSet()
                 )
             }
-                    .collect { (hiddenSet, renameMap, categoryMap, customCategoryNames) ->
-                        rebuildVisibleApps(hiddenSet, renameMap, categoryMap, customCategoryNames)
+                    .collect { overlays ->
+                        rebuildVisibleApps(
+                            overlays.hiddenPackages,
+                            overlays.renames,
+                            overlays.categoryAssignments,
+                            overlays.availableCategories
+                        )
                     }
         }
     }
     
-    // Helper data class for combining 4 flows
-    private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
+    /** Data class representing app display overlays from database */
+    private data class AppOverlays(
+        val hiddenPackages: Set<String>,
+        val renames: Map<String, String>,
+        val categoryAssignments: Map<String, String>,
+        val availableCategories: Set<String>
+    )
 
     /**
      * Applies hidden + renamed overlays and updates filteredApps. Runs the expensive PackageManager
