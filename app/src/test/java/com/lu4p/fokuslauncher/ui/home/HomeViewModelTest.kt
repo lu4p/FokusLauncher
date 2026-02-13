@@ -6,6 +6,7 @@ import android.os.BatteryManager
 import app.cash.turbine.test
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
@@ -13,6 +14,7 @@ import com.lu4p.fokuslauncher.data.repository.WeatherRepository
 import com.lu4p.fokuslauncher.utils.WallpaperHelper
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -69,6 +71,7 @@ class HomeViewModelTest {
         every { preferencesManager.swipeRightTargetFlow } returns flowOf<ShortcutTarget?>(null)
         every { preferencesManager.rightSideShortcutsFlow } returns flowOf(emptyList<HomeShortcut>())
         coEvery { preferencesManager.ensureRightSideShortcutsInitialized() } returns Unit
+        coEvery { preferencesManager.setFavorites(any()) } returns Unit
 
         // Mock repository flows used by name resolution
         every { appRepository.getAllRenamedApps() } returns flowOf(emptyList<RenamedAppEntity>())
@@ -190,5 +193,25 @@ class HomeViewModelTest {
         testDispatcher.scheduler.advanceTimeBy(100)
 
         assertFalse(viewModel.uiState.value.isDefaultLauncher)
+    }
+
+    @Test
+    fun `refreshInstalledApps removes uninstalled favorites`() = runTest {
+        every { appRepository.getInstalledApps() } returns listOf(
+            AppInfo(packageName = "com.lu4p.music", label = "Music", icon = null)
+        )
+        val viewModel = createViewModel()
+
+        viewModel.refreshInstalledApps()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify { appRepository.invalidateCache() }
+        coVerify {
+            preferencesManager.setFavorites(
+                match { favorites ->
+                    favorites.size == 1 && favorites[0].packageName == "com.lu4p.music"
+                }
+            )
+        }
     }
 }

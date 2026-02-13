@@ -148,7 +148,7 @@ class HomeViewModel @Inject constructor(
         startWeatherTicker()
         observeWallpaperSetting()
         checkDefaultLauncher()
-        loadAppNames()
+        refreshInstalledApps()
         loadShortcutActions()
         observeRenames()
     }
@@ -167,11 +167,18 @@ class HomeViewModel @Inject constructor(
      * Pre-warms the app cache and builds the package-name → label map
      * used to resolve real app names for home-screen favorites.
      */
-    private fun loadAppNames() {
+    fun refreshInstalledApps() {
         viewModelScope.launch(Dispatchers.IO) {
+            appRepository.invalidateCache()
             val apps = appRepository.getInstalledApps()
             _appNameMap.value = apps.associate { it.packageName to it.label }
             _allInstalledApps.value = apps
+            val installedPackages = apps.map { it.packageName }.toSet()
+            val currentFavorites = rawFavorites.value
+            val updatedFavorites = currentFavorites.filter { it.packageName in installedPackages }
+            if (updatedFavorites.size != currentFavorites.size) {
+                preferencesManager.setFavorites(updatedFavorites)
+            }
         }
     }
 
