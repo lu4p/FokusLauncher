@@ -68,6 +68,10 @@ constructor(
 
     private val _events = MutableSharedFlow<DrawerEvent>()
     val events: SharedFlow<DrawerEvent> = _events.asSharedFlow()
+    private var latestHiddenSet: Set<String> = emptySet()
+    private var latestRenameMap: Map<String, String> = emptyMap()
+    private var latestCategoryMap: Map<String, String> = emptyMap()
+    private var latestDefinedCategories: List<String> = emptyList()
 
     init {
         loadApps()
@@ -95,8 +99,13 @@ constructor(
      */
     private fun loadApps() {
         viewModelScope.launch {
-            val apps = withContext(Dispatchers.IO) { appRepository.getInstalledApps() }
-            _uiState.update { it.copy(allApps = apps) }
+            withContext(Dispatchers.IO) { appRepository.getInstalledApps() }
+            rebuildVisibleApps(
+                    hiddenSet = latestHiddenSet,
+                    renameMap = latestRenameMap,
+                    categoryMap = latestCategoryMap,
+                    definedCategories = latestDefinedCategories
+            )
         }
     }
 
@@ -120,6 +129,10 @@ constructor(
                 )
             }
                     .collect { state ->
+                        latestHiddenSet = state.hiddenSet
+                        latestRenameMap = state.renameMap
+                        latestCategoryMap = state.categoryMap
+                        latestDefinedCategories = state.definedCategories
                         rebuildVisibleApps(
                                 hiddenSet = state.hiddenSet,
                                 renameMap = state.renameMap,
@@ -385,8 +398,14 @@ constructor(
 
     fun refresh() {
         appRepository.invalidateCache()
-        loadApps()
-        // observeHiddenAndRenamed will rebuild visible list automatically
+        viewModelScope.launch {
+            rebuildVisibleApps(
+                    hiddenSet = latestHiddenSet,
+                    renameMap = latestRenameMap,
+                    categoryMap = latestCategoryMap,
+                    definedCategories = latestDefinedCategories
+            )
+        }
     }
 
     fun resetSearchState() {

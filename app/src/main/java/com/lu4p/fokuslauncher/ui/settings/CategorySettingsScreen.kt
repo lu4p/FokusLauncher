@@ -30,6 +30,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +61,10 @@ fun CategorySettingsScreen(
                     !normalizedNewCategory.equals("Private", ignoreCase = true)
     val categories = remember(uiState.allApps, uiState.appCategories, uiState.categoryDefinitions) {
         deriveEditableCategories(uiState)
+    }
+    var localCategories by remember(categories) { mutableStateOf(categories) }
+    LaunchedEffect(categories) {
+        if (localCategories != categories) localCategories = categories
     }
     val appCounts = remember(uiState.allApps, uiState.appCategories) { buildCategoryCounts(uiState) }
 
@@ -99,14 +104,15 @@ fun CategorySettingsScreen(
         }
 
         ReorderableCategoryList(
-                categories = categories,
+                categories = localCategories,
                 counts = appCounts,
                 onReorder = { from, to ->
-                    val reordered = categories.toMutableList()
+                    val reordered = localCategories.toMutableList()
                     val item = reordered.removeAt(from)
                     reordered.add(to, item)
-                    viewModel.reorderCategories(reordered)
+                    localCategories = reordered
                 },
+                onReorderFinished = { viewModel.reorderCategories(it) },
                 onEditCategoryApps = onEditCategoryApps,
                 onDelete = { viewModel.deleteCategory(it) }
         )
@@ -118,6 +124,7 @@ private fun ReorderableCategoryList(
         categories: List<String>,
         counts: Map<String, Int>,
         onReorder: (Int, Int) -> Unit,
+        onReorderFinished: (List<String>) -> Unit,
         onEditCategoryApps: (String) -> Unit,
         onDelete: (String) -> Unit
 ) {
@@ -125,6 +132,9 @@ private fun ReorderableCategoryList(
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val itemHeightPx = with(LocalDensity.current) { 56.dp.toPx() }
     val resetDragState = {
+        if (draggedIndex != -1) {
+            onReorderFinished(categories)
+        }
         draggedIndex = -1
         dragOffset = 0f
     }
