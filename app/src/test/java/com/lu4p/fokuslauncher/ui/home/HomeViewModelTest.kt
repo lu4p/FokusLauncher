@@ -3,6 +3,7 @@ package com.lu4p.fokuslauncher.ui.home
 import android.content.Context
 import android.content.Intent
 import android.os.BatteryManager
+import android.os.Looper
 import app.cash.turbine.test
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
@@ -17,6 +18,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -50,6 +53,8 @@ class HomeViewModelTest {
 
     @Before
     fun setup() {
+        mockkStatic(Looper::class)
+        every { Looper.getMainLooper() } returns mockk(relaxed = true)
         Dispatchers.setMain(testDispatcher)
 
         context = mockk(relaxed = true)
@@ -82,6 +87,7 @@ class HomeViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        unmockkStatic(Looper::class)
     }
 
     private fun createViewModel() = HomeViewModel(

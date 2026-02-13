@@ -144,7 +144,7 @@ class AppRepositoryTest {
         val result = repository.launchApp("com.lu4p.app1")
 
         assertTrue(result)
-        verify { context.startActivity(launchIntent) }
+        verify { context.startActivity(launchIntent, null) }
     }
 
     @Test
