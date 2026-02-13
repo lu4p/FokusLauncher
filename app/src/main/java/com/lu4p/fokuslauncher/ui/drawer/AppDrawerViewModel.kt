@@ -324,28 +324,33 @@ constructor(
     }
 
     fun refreshPrivateSpaceState() {
-        val supported = privateSpaceManager.isSupported
-        val unlocked = privateSpaceManager.isPrivateSpaceUnlocked()
-        val apps = if (unlocked) privateSpaceManager.getPrivateSpaceApps() else emptyList()
-        _uiState.update { state ->
-            val categories =
-                    deriveCategories(
-                            apps = state.allApps,
-                            includePrivate = unlocked && apps.isNotEmpty()
-                    )
-            val filteredPrivate =
-                    applyPrivateFilter(
-                            query = state.searchQuery,
-                            selectedCategory = state.selectedCategory,
-                            privateApps = apps
-                    )
-            state.copy(
-                    isPrivateSpaceSupported = supported,
-                    isPrivateSpaceUnlocked = unlocked,
-                    privateSpaceApps = apps,
-                    filteredPrivateSpaceApps = filteredPrivate,
-                    categories = categories
-            )
+        viewModelScope.launch {
+            val supported = privateSpaceManager.isSupported
+            val unlocked = privateSpaceManager.isPrivateSpaceUnlocked()
+            val apps = if (unlocked) privateSpaceManager.getPrivateSpaceApps() else emptyList()
+            val customCategories = appRepository.getAllCategories().first().map { it.name }.toSet()
+            
+            _uiState.update { state ->
+                val categories =
+                        deriveCategories(
+                                apps = state.allApps,
+                                customCategories = customCategories,
+                                includePrivate = unlocked && apps.isNotEmpty()
+                        )
+                val filteredPrivate =
+                        applyPrivateFilter(
+                                query = state.searchQuery,
+                                selectedCategory = state.selectedCategory,
+                                privateApps = apps
+                        )
+                state.copy(
+                        isPrivateSpaceSupported = supported,
+                        isPrivateSpaceUnlocked = unlocked,
+                        privateSpaceApps = apps,
+                        filteredPrivateSpaceApps = filteredPrivate,
+                        categories = categories
+                )
+            }
         }
     }
 
