@@ -53,6 +53,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.ui.components.CategoryChips
 import com.lu4p.fokuslauncher.ui.components.SearchBar
+import java.util.Locale
 import kotlinx.coroutines.delay
 
 @Composable
@@ -83,6 +84,7 @@ fun AppDrawerScreen(
 
     // Close the drawer after an app is auto-launched from search
     LaunchedEffect(Unit) {
+        viewModel.resetSearchState()
         viewModel.refresh()
         viewModel.events.collect { event ->
             when (event) {
@@ -99,8 +101,9 @@ fun AppDrawerScreen(
             onCategorySelected = viewModel::onCategorySelected,
             onCategoryLongPress = viewModel::onCategoryLongPress,
             onAppClick = { target ->
-                viewModel.launchTarget(target)
-                closeAndReset()
+                if (viewModel.launchTarget(target)) {
+                    closeAndReset()
+                }
             },
             onAppLongPress = viewModel::onAppLongPress,
             onMenuToggle = viewModel::toggleMenu,
@@ -275,8 +278,8 @@ fun AppDrawerContent(
             if (uiState.filteredApps.isNotEmpty()) {
                 item {
                     Text(
-                            text = uiState.selectedCategory,
-                            style = MaterialTheme.typography.titleMedium,
+                            text = uiState.selectedCategory.uppercase(Locale.getDefault()),
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
                     )
@@ -303,8 +306,8 @@ fun AppDrawerContent(
                 }
                 item {
                     Text(
-                            text = "Private Space",
-                            style = MaterialTheme.typography.titleMedium,
+                            text = "Private Space".uppercase(Locale.getDefault()),
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
                     )
