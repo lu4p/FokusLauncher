@@ -197,9 +197,10 @@ constructor(
                 )
         if (!browseMode && trimmed.isNotBlank() && allMatches.size == 1) {
             val target = allMatches[0]
-            viewModelScope.launch { _events.emit(DrawerEvent.AutoLaunch(target)) }
-            launchTarget(target)
-            resetSearchState()
+            if (launchTarget(target)) {
+                resetSearchState()
+                viewModelScope.launch { _events.emit(DrawerEvent.AutoLaunch(target)) }
+            }
         }
     }
 
@@ -222,12 +223,12 @@ constructor(
 
     // --- Launch ---
 
-    fun launchApp(packageName: String) {
-        launchTarget(LaunchTarget.MainApp(packageName))
+    fun launchApp(packageName: String): Boolean {
+        return launchTarget(LaunchTarget.MainApp(packageName))
     }
 
-    fun launchTarget(target: LaunchTarget) {
-        when (target) {
+    fun launchTarget(target: LaunchTarget): Boolean {
+        return when (target) {
             is LaunchTarget.MainApp -> appRepository.launchApp(target.packageName)
             is LaunchTarget.PrivateApp ->
                     privateSpaceManager.launchApp(target.componentName, target.userHandle)

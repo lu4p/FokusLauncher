@@ -67,9 +67,11 @@ class AppDrawerViewModelTest {
         every { appRepository.getHiddenPackageNames() } returns hiddenFlow
         every { appRepository.getAllRenamedApps() } returns renamedFlow
         every { appRepository.getAllAppCategories() } returns categoriesFlow
+        every { appRepository.launchApp(any()) } returns true
         every { preferencesManager.favoritesFlow } returns favoritesFlow
         every { privateSpaceManager.isSupported } returns false
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns false
+        every { privateSpaceManager.launchApp(any(), any()) } returns true
         viewModel = AppDrawerViewModel(appRepository, privateSpaceManager, preferencesManager)
         testDispatcher.scheduler.advanceUntilIdle()
     }
@@ -120,6 +122,15 @@ class AppDrawerViewModelTest {
         verify { appRepository.launchApp("com.lu4p.atom") }
         // Search should be cleared after auto-launch
         assertEquals("", viewModel.uiState.value.searchQuery)
+    }
+
+    @Test
+    fun `single search result does not reset query when launch fails`() {
+        every { appRepository.launchApp("com.lu4p.atom") } returns false
+
+        viewModel.onSearchQueryChanged("Atom")
+
+        assertEquals("Atom", viewModel.uiState.value.searchQuery)
     }
 
     @Test
