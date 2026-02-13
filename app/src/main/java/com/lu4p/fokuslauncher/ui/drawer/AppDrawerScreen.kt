@@ -347,6 +347,11 @@ private fun CategoryActionSheet(
         onDelete: () -> Unit
 ) {
     var renameValue by remember(category) { mutableStateOf(category) }
+    val normalized = renameValue.trim()
+    val canRename =
+            normalized.isNotBlank() &&
+                    !normalized.equals("All apps", ignoreCase = true) &&
+                    !normalized.equals("Private", ignoreCase = true)
     ModalBottomSheet(onDismissRequest = onDismiss) {
         OutlinedTextField(
                 value = renameValue,
@@ -356,6 +361,7 @@ private fun CategoryActionSheet(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
         )
         TextButton(
+                enabled = canRename,
                 onClick = { onRename(renameValue) },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
         ) {

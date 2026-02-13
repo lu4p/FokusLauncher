@@ -41,6 +41,11 @@ fun CategorySettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var newCategory by remember { mutableStateOf("") }
+    val normalizedNewCategory = newCategory.trim()
+    val canAddCategory =
+            normalizedNewCategory.isNotBlank() &&
+                    !normalizedNewCategory.equals("All apps", ignoreCase = true) &&
+                    !normalizedNewCategory.equals("Private", ignoreCase = true)
     val categories = remember(uiState.allApps, uiState.appCategories, uiState.categoryDefinitions) {
         deriveEditableCategories(uiState)
     }
@@ -70,6 +75,7 @@ fun CategorySettingsScreen(
                     modifier = Modifier.weight(1f)
             )
             TextButton(
+                    enabled = canAddCategory,
                     onClick = {
                         viewModel.addCategoryDefinition(newCategory)
                         newCategory = ""

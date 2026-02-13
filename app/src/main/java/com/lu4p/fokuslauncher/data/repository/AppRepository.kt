@@ -19,6 +19,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 
 /**
  * Repository responsible for loading and caching installed apps from the system, and managing
@@ -258,8 +259,9 @@ constructor(@ApplicationContext private val context: Context, private val appDao
         if (newNormalized.equals("Private", ignoreCase = true)) return
 
         val installed = getInstalledApps()
+        val explicitMap = appDao.getAllAppCategories().first().associate { it.packageName to it.category }
         installed.forEach { app ->
-            val explicit = appDao.getAppCategory(app.packageName)
+            val explicit = explicitMap[app.packageName]
             val effective = explicit ?: app.category
             if (effective.equals(oldNormalized, ignoreCase = true)) {
                 appDao.setAppCategory(AppCategoryEntity(app.packageName, newNormalized))
@@ -279,8 +281,9 @@ constructor(@ApplicationContext private val context: Context, private val appDao
         if (normalized.equals("Private", ignoreCase = true)) return
 
         val installed = getInstalledApps()
+        val explicitMap = appDao.getAllAppCategories().first().associate { it.packageName to it.category }
         installed.forEach { app ->
-            val explicit = appDao.getAppCategory(app.packageName)
+            val explicit = explicitMap[app.packageName]
             val effective = explicit ?: app.category
             if (effective.equals(normalized, ignoreCase = true)) {
                 appDao.setAppCategory(AppCategoryEntity(app.packageName, ""))
