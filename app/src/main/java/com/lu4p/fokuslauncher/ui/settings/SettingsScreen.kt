@@ -33,6 +33,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -54,6 +57,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -109,6 +113,14 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f)
                     )
                 }
+            }
+
+            // Home screen alignment picker
+            item {
+                HomeAlignmentRow(
+                        currentAlignment = uiState.homeAlignment,
+                        onAlignmentChanged = { viewModel.setHomeAlignment(it) }
+                )
             }
 
             item {
@@ -378,6 +390,46 @@ fun SettingsScreen(
 }
 
 // =========================  SUB-COMPOSABLES  =========================
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HomeAlignmentRow(
+        currentAlignment: HomeAlignment,
+        onAlignmentChanged: (HomeAlignment) -> Unit
+) {
+    Column(
+            modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        Text(
+                text = "Home screen alignment",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+                text = "Position of app labels and shortcut icons",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary
+        )
+        Spacer(Modifier.height(12.dp))
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            HomeAlignment.entries.forEachIndexed { index, alignment ->
+                SegmentedButton(
+                        selected = currentAlignment == alignment,
+                        onClick = { onAlignmentChanged(alignment) },
+                        shape = SegmentedButtonDefaults.itemShape(
+                                index = index,
+                                count = HomeAlignment.entries.size
+                        )
+                ) {
+                    Text(alignment.displayName)
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun SectionHeader(title: String) {

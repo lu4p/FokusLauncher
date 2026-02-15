@@ -59,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.ui.components.ClockWidget
@@ -282,54 +283,159 @@ fun HomeScreenContent(
             // Push favorites to the bottom
             Spacer(modifier = Modifier.weight(1f))
 
-            // Favorite apps: labels left, independent icons right — bottom-aligned
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("favorites_list"),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                // Left column: app labels
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    favorites.forEach { fav ->
-                        Text(
-                            text = fav.label,
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier
-                                .combinedClickable(
-                                    indication = null,
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    onClick = { onLabelClick(fav.packageName) },
-                                    onLongClick = { onLabelLongPress(fav) }
-                                )
-                                .testTag("favorite_${fav.label}")
-                        )
+            // Favorite apps: layout depends on alignment setting
+            when (uiState.homeAlignment) {
+                HomeAlignment.CENTER -> {
+                    // Centered layout: labels stacked above icons
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("favorites_list"),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        favorites.forEach { fav ->
+                            Text(
+                                text = fav.label,
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier
+                                    .combinedClickable(
+                                        indication = null,
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        onClick = { onLabelClick(fav.packageName) },
+                                        onLongClick = { onLabelLongPress(fav) }
+                                    )
+                                    .testTag("favorite_${fav.label}")
+                            )
+                            Spacer(modifier = Modifier.height(20.dp))
+                        }
+                        if (rightSideShortcuts.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                rightSideShortcuts.reversed().forEachIndexed { index, shortcut ->
+                                    Icon(
+                                        imageVector = MinimalIcons.iconFor(shortcut.iconName),
+                                        contentDescription = "Shortcut icon",
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onIconClick(shortcut.target) }
+                                            .testTag("right_shortcut_icon_$index")
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.width(24.dp))
+                HomeAlignment.RIGHT -> {
+                    // Swapped: icons on the left, labels on the right
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("favorites_list"),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        // Left column: icon shortcuts
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            rightSideShortcuts.reversed().forEachIndexed { index, shortcut ->
+                                Icon(
+                                    imageVector = MinimalIcons.iconFor(shortcut.iconName),
+                                    contentDescription = "Shortcut icon",
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onIconClick(shortcut.target) }
+                                        .testTag("right_shortcut_icon_$index")
+                                )
+                            }
+                        }
 
-                // Right column: independent icon shortcuts (first in list = bottom)
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    rightSideShortcuts.reversed().forEachIndexed { index, shortcut ->
-                        Icon(
-                            imageVector = MinimalIcons.iconFor(shortcut.iconName),
-                            contentDescription = "Shortcut icon",
-                            tint = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onIconClick(shortcut.target) }
-                                .testTag("right_shortcut_icon_$index")
-                        )
+                        Spacer(modifier = Modifier.width(24.dp))
+
+                        // Right column: app labels
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(20.dp),
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            favorites.forEach { fav ->
+                                Text(
+                                    text = fav.label,
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier
+                                        .combinedClickable(
+                                            indication = null,
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            onClick = { onLabelClick(fav.packageName) },
+                                            onLongClick = { onLabelLongPress(fav) }
+                                        )
+                                        .testTag("favorite_${fav.label}")
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HomeAlignment.LEFT -> {
+                    // Default: labels left, icons right
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("favorites_list"),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        // Left column: app labels
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(20.dp),
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            favorites.forEach { fav ->
+                                Text(
+                                    text = fav.label,
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier
+                                        .combinedClickable(
+                                            indication = null,
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            onClick = { onLabelClick(fav.packageName) },
+                                            onLongClick = { onLabelLongPress(fav) }
+                                        )
+                                        .testTag("favorite_${fav.label}")
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(24.dp))
+
+                        // Right column: independent icon shortcuts (first in list = bottom)
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            rightSideShortcuts.reversed().forEachIndexed { index, shortcut ->
+                                Icon(
+                                    imageVector = MinimalIcons.iconFor(shortcut.iconName),
+                                    contentDescription = "Shortcut icon",
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onIconClick(shortcut.target) }
+                                        .testTag("right_shortcut_icon_$index")
+                                )
+                            }
+                        }
                     }
                 }
             }

@@ -21,6 +21,7 @@ import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.WeatherData
@@ -51,7 +52,8 @@ data class HomeUiState(
     val weather: WeatherData? = null,
     val showWeatherWidget: Boolean = false,
     val showWallpaper: Boolean = false,
-    val isDefaultLauncher: Boolean = true
+    val isDefaultLauncher: Boolean = true,
+    val homeAlignment: HomeAlignment = HomeAlignment.LEFT
 )
 
 @HiltViewModel
@@ -147,6 +149,7 @@ class HomeViewModel @Inject constructor(
         updateBattery()
         startWeatherTicker()
         observeWallpaperSetting()
+        observeHomeAlignment()
         checkDefaultLauncher()
         refreshInstalledApps()
         loadShortcutActions()
@@ -429,6 +432,14 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.showWallpaperFlow.collect { show ->
                 _uiState.value = _uiState.value.copy(showWallpaper = show)
+            }
+        }
+    }
+
+    private fun observeHomeAlignment() {
+        viewModelScope.launch {
+            preferencesManager.homeAlignmentFlow.collect { alignment ->
+                _uiState.value = _uiState.value.copy(homeAlignment = alignment)
             }
         }
     }

@@ -7,6 +7,7 @@ import app.cash.turbine.test
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
@@ -70,6 +71,7 @@ class HomeViewModelTest {
         every { preferencesManager.swipeLeftTargetFlow } returns flowOf<ShortcutTarget?>(null)
         every { preferencesManager.swipeRightTargetFlow } returns flowOf<ShortcutTarget?>(null)
         every { preferencesManager.rightSideShortcutsFlow } returns flowOf(emptyList<HomeShortcut>())
+        every { preferencesManager.homeAlignmentFlow } returns flowOf(HomeAlignment.LEFT)
         coEvery { preferencesManager.ensureRightSideShortcutsInitialized() } returns Unit
         coEvery { preferencesManager.setFavorites(any()) } returns Unit
 
