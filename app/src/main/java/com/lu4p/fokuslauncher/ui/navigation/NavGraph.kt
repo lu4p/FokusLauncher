@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Process
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -34,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -55,6 +57,7 @@ import com.lu4p.fokuslauncher.ui.settings.CategoryAppsScreen
 import com.lu4p.fokuslauncher.ui.settings.CategorySettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsScreen
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 object Routes {
@@ -70,6 +73,11 @@ private const val ANIM_DURATION = 350
 private const val HORIZONTAL_MAX_SLIDE_RATIO = 0.6f
 private const val HORIZONTAL_TRIGGER_RATIO = 0.6f
 private const val HORIZONTAL_DRAG_GAIN = 1.8f
+
+private fun snapBackAnimationSpec() = spring<Float>(
+    dampingRatio = Spring.DampingRatioMediumBouncy,
+    stiffness = Spring.StiffnessMedium
+)
 
 @Composable
 fun FokusNavGraph(
@@ -153,13 +161,20 @@ fun FokusNavGraph(
                     val maxSlidePx = with(density) { (maxWidth * HORIZONTAL_MAX_SLIDE_RATIO).toPx() }
                     val triggerPx = with(density) { (maxWidth * HORIZONTAL_TRIGGER_RATIO).toPx() }
                     var horizontalOffsetPx by remember { mutableFloatStateOf(0f) }
+                    val coroutineScope = rememberCoroutineScope()
+                    val snapBackSpec = snapBackAnimationSpec()
                     var launchTriggered by remember { mutableStateOf(false) }
 
                     LaunchedEffect(launchTriggered) {
                         if (launchTriggered) {
                             // Keep the panel at the swiped position briefly so launch feels continuous.
                             delay(260)
-                            horizontalOffsetPx = 0f
+                            Animatable(horizontalOffsetPx).animateTo(
+                                targetValue = 0f,
+                                animationSpec = snapBackSpec
+                            ) {
+                                horizontalOffsetPx = value
+                            }
                             launchTriggered = false
                         }
                     }
@@ -222,10 +237,28 @@ fun FokusNavGraph(
                                                         }
                                                     },
                                                     onDragEnd = {
-                                                        if (!launchTriggered) horizontalOffsetPx = 0f
+                                                        if (!launchTriggered) {
+                                                            coroutineScope.launch {
+                                                                Animatable(horizontalOffsetPx).animateTo(
+                                                                    targetValue = 0f,
+                                                                    animationSpec = snapBackSpec
+                                                                ) {
+                                                                    horizontalOffsetPx = value
+                                                                }
+                                                            }
+                                                        }
                                                     },
                                                     onDragCancel = {
-                                                        if (!launchTriggered) horizontalOffsetPx = 0f
+                                                        if (!launchTriggered) {
+                                                            coroutineScope.launch {
+                                                                Animatable(horizontalOffsetPx).animateTo(
+                                                                    targetValue = 0f,
+                                                                    animationSpec = snapBackSpec
+                                                                ) {
+                                                                    horizontalOffsetPx = value
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 )
                                             }
