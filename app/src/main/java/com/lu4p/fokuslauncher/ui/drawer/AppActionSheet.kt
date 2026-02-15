@@ -2,6 +2,7 @@ package com.lu4p.fokuslauncher.ui.drawer
 
 import android.content.Intent
 import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,7 +40,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 
 /**
  * Bottom sheet shown on long-press of an app in the drawer.
- * Offers: Add to home, Rename, Hide, Uninstall.
+ * Offers: Add to home, Rename, App info, Hide, Uninstall.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,6 +124,20 @@ fun AppActionSheet(
                     }
                 )
             }
+
+            ActionRow(
+                icon = Icons.Default.Info,
+                label = "App info",
+                testTag = "action_app_info",
+                onClick = {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.parse("package:${app.packageName}")
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                    onDismiss()
+                }
+            )
 
             ActionRow(
                 icon = Icons.Default.VisibilityOff,
