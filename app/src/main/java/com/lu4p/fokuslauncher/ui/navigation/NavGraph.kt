@@ -75,6 +75,12 @@ private const val HORIZONTAL_TRIGGER_RATIO = 0.6f
 private const val HORIZONTAL_DRAG_GAIN = 1.8f
 
 @Composable
+private fun snapBackAnimationSpec() = spring<Float>(
+    dampingRatio = Spring.DampingRatioMediumBouncy,
+    stiffness = Spring.StiffnessMedium
+)
+
+@Composable
 fun FokusNavGraph(
     navGraphViewModel: FokusNavGraphViewModel = hiltViewModel()
 ) {
@@ -157,6 +163,7 @@ fun FokusNavGraph(
                     val triggerPx = with(density) { (maxWidth * HORIZONTAL_TRIGGER_RATIO).toPx() }
                     val horizontalOffsetPx = remember { Animatable(0f) }
                     val coroutineScope = rememberCoroutineScope()
+                    val snapBackSpec = snapBackAnimationSpec()
                     var launchTriggered by remember { mutableStateOf(false) }
 
                     LaunchedEffect(launchTriggered) {
@@ -165,10 +172,7 @@ fun FokusNavGraph(
                             delay(260)
                             horizontalOffsetPx.animateTo(
                                 targetValue = 0f,
-                                animationSpec = spring(
-                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                    stiffness = Spring.StiffnessMedium
-                                )
+                                animationSpec = snapBackSpec
                             )
                             launchTriggered = false
                         }
@@ -241,10 +245,7 @@ fun FokusNavGraph(
                                                             coroutineScope.launch {
                                                                 horizontalOffsetPx.animateTo(
                                                                     targetValue = 0f,
-                                                                    animationSpec = spring(
-                                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                                        stiffness = Spring.StiffnessMedium
-                                                                    )
+                                                                    animationSpec = snapBackSpec
                                                                 )
                                                             }
                                                         }
@@ -254,10 +255,7 @@ fun FokusNavGraph(
                                                             coroutineScope.launch {
                                                                 horizontalOffsetPx.animateTo(
                                                                     targetValue = 0f,
-                                                                    animationSpec = spring(
-                                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                                        stiffness = Spring.StiffnessMedium
-                                                                    )
+                                                                    animationSpec = snapBackSpec
                                                                 )
                                                             }
                                                         }
