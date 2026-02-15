@@ -86,6 +86,12 @@ private const val HORIZONTAL_TRIGGER_RATIO = 0.6f
 private const val HORIZONTAL_DRAG_GAIN = 1.8f
 
 @Composable
+private fun snapBackAnimationSpec() = spring<Float>(
+    dampingRatio = Spring.DampingRatioMediumBouncy,
+    stiffness = Spring.StiffnessMedium
+)
+
+@Composable
 fun FokusNavGraph(
     navGraphViewModel: FokusNavGraphViewModel = hiltViewModel()
 ) {
@@ -214,6 +220,7 @@ fun FokusNavGraph(
                     val triggerPx = with(density) { (maxWidth * HORIZONTAL_TRIGGER_RATIO).toPx() }
                     val horizontalOffsetPx = remember { Animatable(0f) }
                     val coroutineScope = rememberCoroutineScope()
+                    val snapBackSpec = snapBackAnimationSpec()
                     var launchTriggered by remember { mutableStateOf(false) }
                     val isHorizontalGestureActive = abs(horizontalOffsetPx.value) > 0.5f || launchTriggered
 
@@ -227,10 +234,7 @@ fun FokusNavGraph(
                             delay(260)
                             horizontalOffsetPx.animateTo(
                                 targetValue = 0f,
-                                animationSpec = spring(
-                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                    stiffness = Spring.StiffnessMedium
-                                )
+                                animationSpec = snapBackSpec
                             )
                             launchTriggered = false
                         }
@@ -239,92 +243,96 @@ fun FokusNavGraph(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .pointerInput(Unit) {
-                                detectVerticalDragGestures(
-                                    onDragStart = { vertDrag = 0f },
-                                    onVerticalDrag = { change, dragAmount ->
-                                        change.consume()
-                                        vertDrag += dragAmount
-                                    },
-                                    onDragEnd = {
-                                        when {
-                                            vertDrag < -SWIPE_THRESHOLD -> showDrawer = true
-                                            vertDrag > SWIPE_THRESHOLD -> activity?.let {
-                                                MainActivity.expandStatusBar(it)
-                                            }
-                                        }
-                                        vertDrag = 0f
-                                    }
-                                )
-                            }
                             .then(
-                                if (swipeLeftTarget != null || swipeRightTarget != null) {
-                                    val minSlidePx = if (swipeLeftTarget != null) -maxSlidePx else 0f
-                                    val maxSlidePxVal = if (swipeRightTarget != null) maxSlidePx else 0f
-                                    Modifier.pointerInput(
-                                        swipeLeftTarget,
-                                        swipeRightTarget,
-                                        maxSlidePx,
-                                        triggerPx,
-                                        minSlidePx,
-                                        maxSlidePxVal
-                                    ) {
-                                        detectHorizontalDragGestures(
-                                            onDragStart = { launchTriggered = false },
-                                            onHorizontalDrag = { change, dragAmount ->
-                                                if (launchTriggered) return@detectHorizontalDragGestures
-                                                if (horizontalOffsetPx.value == 0f) {
-                                                    if (dragAmount > 0 && swipeRightTarget == null) return@detectHorizontalDragGestures
-                                                    if (dragAmount < 0 && swipeLeftTarget == null) return@detectHorizontalDragGestures
-                                                }
+                                if (!showEditOverlay) Modifier
+                                    .pointerInput(Unit) {
+                                        detectVerticalDragGestures(
+                                            onDragStart = { vertDrag = 0f },
+                                            onVerticalDrag = { change, dragAmount ->
                                                 change.consume()
-                                                val newOffset = (horizontalOffsetPx.value + (dragAmount * HORIZONTAL_DRAG_GAIN))
-                                                    .coerceIn(minSlidePx, maxSlidePxVal)
-                                                coroutineScope.launch {
-                                                    horizontalOffsetPx.snapTo(newOffset)
-                                                }
-                                                if (abs(horizontalOffsetPx.value) >= triggerPx) {
-                                                    val target = if (horizontalOffsetPx.value > 0f) swipeRightTarget else swipeLeftTarget
-                                                    if (target != null) {
-                                                        launchTriggered = true
-                                                        coroutineScope.launch {
-                                                            horizontalOffsetPx.snapTo(
-                                                                if (horizontalOffsetPx.value > 0f) maxSlidePx else -maxSlidePx
-                                                            )
-                                                        }
-                                                        activity?.launchWithBottomReveal(target)
-                                                    }
-                                                }
+                                                vertDrag += dragAmount
                                             },
                                             onDragEnd = {
-                                                if (!launchTriggered) {
-                                                    coroutineScope.launch {
-                                                        horizontalOffsetPx.animateTo(
-                                                            targetValue = 0f,
-                                                            animationSpec = spring(
-                                                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                                stiffness = Spring.StiffnessMedium
-                                                            )
-                                                        )
+                                                when {
+                                                    vertDrag < -SWIPE_THRESHOLD -> showDrawer = true
+                                                    vertDrag > SWIPE_THRESHOLD -> activity?.let {
+                                                        MainActivity.expandStatusBar(it)
                                                     }
                                                 }
-                                            },
-                                            onDragCancel = {
-                                                if (!launchTriggered) {
-                                                    coroutineScope.launch {
-                                                        horizontalOffsetPx.animateTo(
-                                                            targetValue = 0f,
-                                                            animationSpec = spring(
-                                                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                                stiffness = Spring.StiffnessMedium
-                                                            )
-                                                        )
-                                                    }
-                                                }
+                                                vertDrag = 0f
                                             }
                                         )
                                     }
-                                } else Modifier
+                                    .then(
+                                        if (swipeLeftTarget != null || swipeRightTarget != null) {
+                                            val minSlidePx = if (swipeLeftTarget != null) -maxSlidePx else 0f
+                                            val maxSlidePxVal = if (swipeRightTarget != null) maxSlidePx else 0f
+                                            Modifier.pointerInput(
+                                                swipeLeftTarget,
+                                                swipeRightTarget,
+                                                maxSlidePx,
+                                                triggerPx,
+                                                minSlidePx,
+                                                maxSlidePxVal
+                                            ) {
+                                                detectHorizontalDragGestures(
+                                                    onDragStart = { launchTriggered = false },
+                                                    onHorizontalDrag = { change, dragAmount ->
+                                                        if (launchTriggered) return@detectHorizontalDragGestures
+                                                        if (horizontalOffsetPx.value == 0f) {
+                                                            if (dragAmount > 0 && swipeRightTarget == null) return@detectHorizontalDragGestures
+                                                            if (dragAmount < 0 && swipeLeftTarget == null) return@detectHorizontalDragGestures
+                                                        }
+                                                        change.consume()
+                                                        val newOffset = (horizontalOffsetPx.value + (dragAmount * HORIZONTAL_DRAG_GAIN))
+                                                            .coerceIn(minSlidePx, maxSlidePxVal)
+                                                        coroutineScope.launch {
+                                                            horizontalOffsetPx.snapTo(newOffset)
+                                                        }
+                                                        if (abs(horizontalOffsetPx.value) >= triggerPx) {
+                                                            val target = if (horizontalOffsetPx.value > 0f) swipeRightTarget else swipeLeftTarget
+                                                            if (target != null) {
+                                                                launchTriggered = true
+                                                                coroutineScope.launch {
+                                                                    horizontalOffsetPx.snapTo(
+                                                                        if (horizontalOffsetPx.value > 0f) maxSlidePx else -maxSlidePx
+                                                                    )
+                                                                }
+                                                                activity?.launchWithBottomReveal(target)
+                                                            }
+                                                        }
+                                                    },
+                                                    onDragEnd = {
+                                                        if (!launchTriggered) {
+                                                            coroutineScope.launch {
+                                                                horizontalOffsetPx.animateTo(
+                                                                    targetValue = 0f,
+                                                                    animationSpec = spring(
+                                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                                        stiffness = Spring.StiffnessMedium
+                                                                    )
+                                                                )
+                                                            }
+                                                        }
+                                                    },
+                                                    onDragCancel = {
+                                                        if (!launchTriggered) {
+                                                            coroutineScope.launch {
+                                                                horizontalOffsetPx.animateTo(
+                                                                    targetValue = 0f,
+                                                                    animationSpec = spring(
+                                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                                        stiffness = Spring.StiffnessMedium
+                                                                    )
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                        } else Modifier
+                                    )
+                                else Modifier
                             )
                     ) {
                         HomeScreen(
