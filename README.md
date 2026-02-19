@@ -99,7 +99,7 @@ If you want to improve Fokus, open an issue or send a pull request with a clear
 problem statement and reproduction details when relevant. Focused changes,
 thoughtful UX decisions, and good test coverage are always appreciated.
 
-If you want to chat about "Fokus Launcher" feel free to join us on matrix [here](https://matrix.to/#/#fokus:matrix.org)
+If you want to chat about Fokus feel free to join us on matrix [here](https://matrix.to/#/#fokus:matrix.org)
 
 ## License
 
