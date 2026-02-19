@@ -6,6 +6,7 @@ import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
@@ -28,6 +29,7 @@ data class SettingsUiState(
         val swipeLeftTarget: ShortcutTarget? = null,
         val swipeRightTarget: ShortcutTarget? = null,
         val preferredWeatherAppPackage: String = "",
+        val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
         val allApps: List<AppInfo> = emptyList()
 )
 
@@ -88,6 +90,12 @@ constructor(
                             swipeState,
                             preferredWeatherApp ->
                         val (leftState, swipeRight) = swipeState
+                        Triple(leftState, swipeRight, preferredWeatherApp)
+                    }
+                    .combine(preferencesManager.homeAlignmentFlow) {
+                            weatherState,
+                            homeAlignment ->
+                        val (leftState, swipeRight, preferredWeatherApp) = weatherState
                         val allApps = appRepository.getInstalledApps()
                         val hiddenInfos =
                                 leftState.base.hiddenNames.map { pkg ->
@@ -104,6 +112,7 @@ constructor(
                                 swipeLeftTarget = leftState.base.swipeLeft,
                                 swipeRightTarget = swipeRight,
                                 preferredWeatherAppPackage = preferredWeatherApp,
+                                homeAlignment = homeAlignment,
                                 allApps = allApps
                         )
                     }
@@ -263,6 +272,12 @@ constructor(
 
     fun setPreferredWeatherApp(packageName: String) {
         viewModelScope.launch { preferencesManager.setPreferredWeatherApp(packageName) }
+    }
+
+    // --- Home alignment ---
+
+    fun setHomeAlignment(alignment: HomeAlignment) {
+        viewModelScope.launch { preferencesManager.setHomeAlignment(alignment) }
     }
 
     /** Clears all app state (preferences + database), equivalent to clearing storage. */

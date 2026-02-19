@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -32,6 +33,7 @@ class PreferencesManager @Inject constructor(@ApplicationContext private val con
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
         private val ONBOARDING_REACHED_SET_DEFAULT_KEY = booleanPreferencesKey("onboarding_reached_set_default")
         private val WEATHER_LOCATION_OPTED_OUT_KEY = booleanPreferencesKey("weather_location_opted_out")
+        private val HOME_ALIGNMENT_KEY = stringPreferencesKey("home_alignment")
 
         /**
          * Format: "label;packageName;iconName" entries separated by "|" Falls back to legacy
@@ -176,6 +178,17 @@ class PreferencesManager @Inject constructor(@ApplicationContext private val con
         return context.dataStore.data.map { prefs ->
             prefs[ONBOARDING_REACHED_SET_DEFAULT_KEY] ?: false
         }.first()
+    }
+
+    // --- Home alignment ---
+
+    val homeAlignmentFlow: Flow<HomeAlignment> =
+            context.dataStore.data.map { prefs ->
+                HomeAlignment.fromString(prefs[HOME_ALIGNMENT_KEY] ?: HomeAlignment.LEFT.name)
+            }
+
+    suspend fun setHomeAlignment(alignment: HomeAlignment) {
+        context.dataStore.edit { prefs -> prefs[HOME_ALIGNMENT_KEY] = alignment.name }
     }
 
     // --- Weather location opt-out ---
