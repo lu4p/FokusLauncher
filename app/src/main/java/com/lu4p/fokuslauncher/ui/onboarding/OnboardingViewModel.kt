@@ -135,6 +135,9 @@ class OnboardingViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     init {
+        // Always start at the first step when onboarding is shown
+        _currentStepIndex.value = 0
+
         checkDefaultLauncher()
         checkLocationPermission()
         viewModelScope.launch {
