@@ -96,14 +96,10 @@ fun FokusNavGraph(
 ) {
     val hasCompletedOnboarding by navGraphViewModel.hasCompletedOnboarding.collectAsStateWithLifecycle()
     val showWallpaper by navGraphViewModel.showWallpaper.collectAsStateWithLifecycle()
-    var pendingOpenEditHomeApps by remember { mutableStateOf(false) }
 
     if (!hasCompletedOnboarding) {
         OnboardingScreen(
-            onNavigateToHome = { /* ViewModel sets hasCompletedOnboarding */ },
-            onNavigateToHomeWithEditOverlay = {
-                pendingOpenEditHomeApps = true
-            }
+            onNavigateToHome = { /* ViewModel sets hasCompletedOnboarding */ }
         )
         return
     }
@@ -197,13 +193,6 @@ fun FokusNavGraph(
                 val homeViewModel: HomeViewModel = hiltViewModel()
                 val lifecycleOwner = LocalLifecycleOwner.current
 
-                // Open edit-home-apps screen after onboarding "Choose apps".
-                LaunchedEffect(pendingOpenEditHomeApps) {
-                    if (pendingOpenEditHomeApps) {
-                        navController.navigate(Routes.SETTINGS_EDIT_HOME_APPS) { launchSingleTop = true }
-                        pendingOpenEditHomeApps = false
-                    }
-                }
                 val swipeLeftTarget by homeViewModel.swipeLeftTarget.collectAsStateWithLifecycle()
                 val swipeRightTarget by homeViewModel.swipeRightTarget.collectAsStateWithLifecycle()
                 val activity = LocalActivity.current
@@ -433,7 +422,7 @@ fun FokusNavGraph(
                     onEditCategories = {
                         navController.navigate(Routes.SETTINGS_CATEGORIES) { launchSingleTop = true }
                     },
-                    backgroundScrim = overlayScrimColor
+                    backgroundScrim = Color.Black
                 )
             }
 
@@ -453,7 +442,7 @@ fun FokusNavGraph(
                             launchSingleTop = true
                         }
                     },
-                    backgroundScrim = overlayScrimColor
+                    backgroundScrim = Color.Black
                 )
             }
 
@@ -468,7 +457,7 @@ fun FokusNavGraph(
                 CategoryAppsScreen(
                     category = Uri.decode(encodedCategory),
                     onNavigateBack = { navController.popBackStack() },
-                    backgroundScrim = overlayScrimColor
+                    backgroundScrim = Color.Black
                 )
             }
 
@@ -486,7 +475,7 @@ fun FokusNavGraph(
                 EditHomeAppsScreen(
                     viewModel = homeViewModel,
                     onNavigateBack = { navController.popBackStack() },
-                    backgroundScrim = overlayScrimColor
+                    backgroundScrim = Color.Black
                 )
             }
 
@@ -504,7 +493,7 @@ fun FokusNavGraph(
                 EditShortcutsScreen(
                     viewModel = homeViewModel,
                     onNavigateBack = { navController.popBackStack() },
-                    backgroundScrim = overlayScrimColor
+                    backgroundScrim = Color.Black
                 )
             }
         }

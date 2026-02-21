@@ -149,9 +149,16 @@ class OnboardingViewModel @Inject constructor(
         onNext()
     }
 
-    fun onChooseApps(onNavigateToHomeWithEdit: () -> Unit) {
+    private val _showEditHomeApps = MutableStateFlow(false)
+    val showEditHomeApps: StateFlow<Boolean> = _showEditHomeApps
+
+    fun onChooseApps() {
+        _showEditHomeApps.value = true
+    }
+
+    fun onEditHomeAppsDismissed() {
+        _showEditHomeApps.value = false
         onNext()
-        onNavigateToHomeWithEdit()
     }
 
     fun onDone(onNavigateToHome: () -> Unit) {

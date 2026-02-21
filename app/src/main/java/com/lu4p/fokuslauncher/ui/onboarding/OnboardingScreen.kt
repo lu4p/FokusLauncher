@@ -3,6 +3,7 @@ package com.lu4p.fokuslauncher.ui.onboarding
 import android.Manifest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -53,16 +54,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.ui.home.HomeViewModel
+import com.lu4p.fokuslauncher.ui.settings.EditHomeAppsScreen
 
 @Composable
 fun OnboardingScreen(
     viewModel: OnboardingViewModel = hiltViewModel(),
-    onNavigateToHome: () -> Unit = {},
-    onNavigateToHomeWithEditOverlay: () -> Unit = {}
+    onNavigateToHome: () -> Unit = {}
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentStep by viewModel.currentStep.collectAsStateWithLifecycle()
     val isLastStep by viewModel.isLastStep.collectAsStateWithLifecycle()
+    val showEditHomeApps by viewModel.showEditHomeApps.collectAsStateWithLifecycle()
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -76,68 +79,82 @@ fun OnboardingScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .padding(32.dp)
-    ) {
-        Spacer(modifier = Modifier.weight(1f))
+    // Create HomeViewModel for the edit screen when needed
+    val homeViewModel: HomeViewModel? = if (showEditHomeApps) hiltViewModel() else null
 
-        val locationPermissionLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission()
-        ) { /* Granted or denied, we proceed to next step */ viewModel.onNext() }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .padding(32.dp)
+        ) {
+            Spacer(modifier = Modifier.weight(1f))
 
-        when (currentStep) {
-            OnboardingStep.WELCOME -> WelcomeStep(
-                onGetStarted = { viewModel.onNext() }
-            )
-            OnboardingStep.LOCATION -> LocationStep(
-                onAllow = {
-                    locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
-                },
-                onSkip = { viewModel.onSkipLocation() }
-            )
-            OnboardingStep.SET_DEFAULT_LAUNCHER -> SetDefaultStep(
-                onSetDefault = { viewModel.openDefaultLauncherSettings() },
-                onNext = { viewModel.onNext() }
-            )
-            OnboardingStep.CUSTOMIZE_HOME -> CustomizeStep(
-                onChooseApps = { viewModel.onChooseApps(onNavigateToHomeWithEditOverlay) },
-                onSkip = { viewModel.onSkip() }
-            )
-            OnboardingStep.SWIPE_SHORTCUTS -> {
-                val swipeState by viewModel.swipeShortcutsState.collectAsStateWithLifecycle()
-                SwipeShortcutsStep(
-                    swipeState = swipeState,
-                    onSetSwipeLeft = { viewModel.setSwipeLeftTarget(it) },
-                    onSetSwipeRight = { viewModel.setSwipeRightTarget(it) },
+            val locationPermissionLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission()
+            ) { /* Granted or denied, we proceed to next step */ viewModel.onNext() }
+
+            when (currentStep) {
+                OnboardingStep.WELCOME -> WelcomeStep(
+                    onGetStarted = { viewModel.onNext() }
+                )
+                OnboardingStep.LOCATION -> LocationStep(
+                    onAllow = {
+                        locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    },
+                    onSkip = { viewModel.onSkipLocation() }
+                )
+                OnboardingStep.SET_DEFAULT_LAUNCHER -> SetDefaultStep(
+                    onSetDefault = { viewModel.openDefaultLauncherSettings() },
+                    onNext = { viewModel.onNext() }
+                )
+                OnboardingStep.CUSTOMIZE_HOME -> CustomizeStep(
+                    onChooseApps = { viewModel.onChooseApps() },
                     onSkip = { viewModel.onSkip() }
                 )
-            }
-            OnboardingStep.QUICK_TIPS -> QuickTipsStep(
-                onDone = { viewModel.onDone(onNavigateToHome) }
-            )
-            null -> { /* Loading / empty state */ }
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        if (currentStep != OnboardingStep.CUSTOMIZE_HOME && currentStep != OnboardingStep.LOCATION && currentStep != OnboardingStep.SWIPE_SHORTCUTS && !isLastStep) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(onClick = { viewModel.onNext() }) {
-                    Text(
-                        text = stringResource(R.string.onboarding_next),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                OnboardingStep.SWIPE_SHORTCUTS -> {
+                    val swipeState by viewModel.swipeShortcutsState.collectAsStateWithLifecycle()
+                    SwipeShortcutsStep(
+                        swipeState = swipeState,
+                        onSetSwipeLeft = { viewModel.setSwipeLeftTarget(it) },
+                        onSetSwipeRight = { viewModel.setSwipeRightTarget(it) },
+                        onSkip = { viewModel.onSkip() }
                     )
                 }
+                OnboardingStep.QUICK_TIPS -> QuickTipsStep(
+                    onDone = { viewModel.onDone(onNavigateToHome) }
+                )
+                null -> { /* Loading / empty state */ }
             }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            if (currentStep != OnboardingStep.CUSTOMIZE_HOME && currentStep != OnboardingStep.LOCATION && currentStep != OnboardingStep.SWIPE_SHORTCUTS && !isLastStep) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = { viewModel.onNext() }) {
+                        Text(
+                            text = stringResource(R.string.onboarding_next),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
+        // Show EditHomeAppsScreen as full-screen overlay during onboarding
+        if (showEditHomeApps && homeViewModel != null) {
+            EditHomeAppsScreen(
+                viewModel = homeViewModel,
+                onNavigateBack = { viewModel.onEditHomeAppsDismissed() },
+                backgroundScrim = Color.Black
+            )
         }
     }
 }
@@ -461,7 +478,7 @@ private fun OnboardingAppPickerDialog(
         },
         confirmButton = {},
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.onboarding_swipe_cancel)) } },
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = Color.Black
     )
 }
 

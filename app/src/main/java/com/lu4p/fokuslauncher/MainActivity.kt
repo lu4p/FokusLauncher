@@ -13,6 +13,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
+import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.ui.navigation.FokusNavGraph
 import com.lu4p.fokuslauncher.ui.theme.FokusLauncherTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -28,8 +29,17 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var preferencesManager: PreferencesManager
 
+    @Inject
+    lateinit var appRepository: AppRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Preload apps in background to warm up cache
+        CoroutineScope(Dispatchers.IO).launch {
+            appRepository.getInstalledApps()
+        }
+
         enableEdgeToEdge()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
