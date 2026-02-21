@@ -3,6 +3,7 @@ agp = "9.0.1"
 ksp = "2.3.5"
 hilt = "2.59.1"
 composeBom = "2026.02.00"
+mockwebserver = "5.3.2"
 room = "2.8.4"
 lifecycle = "2.10.0"
 navigation = "2.9.7"
@@ -20,7 +21,7 @@ espressoCore = "3.7.0"
 mockk = "1.14.9"
 turbine = "1.2.1"
 coroutinesTest = "1.10.2"
-robolectric = "4.16"
+robolectric = "4.16.1"
 
 [libraries]
 # Core
@@ -60,6 +61,7 @@ androidx-datastore-preferences = { group = "androidx.datastore", name = "datasto
 # Unit Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "mockwebserver" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }

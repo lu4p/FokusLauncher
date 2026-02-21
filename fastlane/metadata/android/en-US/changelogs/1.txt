@@ -1,0 +1,1 @@
+Initial release of Fokus Launcher. Minimal home screen with clock, weather, gesture navigation, configurable shortcuts, fast app drawer with search, and Private Space support on Android 15+.

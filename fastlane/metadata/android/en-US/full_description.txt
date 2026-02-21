@@ -1,0 +1,29 @@
+Fokus Launcher is an Android launcher for people who want a simpler, cleaner default experience. It focuses on fast access to time, weather, and core apps with minimal visual noise.
+
+<b>Home Screen</b>
+
+The home screen is intentionally minimal: a large clock and date, battery status, optional weather, configurable favorite app labels, and a configurable right-side shortcut rail. Primary interactions are gesture-based — swipe up to open the app drawer, swipe down to expand the notification shade, and swipe left or right to launch shortcut targets.
+
+<b>App Drawer</b>
+
+The app drawer is optimized for quick launch. Search and category filters narrow results instantly, and when only one app matches a query Fokus can launch it directly. Long-pressing a drawer app shows actions: add to home, rename, hide, and uninstall.
+
+<b>Customization</b>
+
+You can edit home apps, configure right-side shortcuts (including launcher shortcut actions, not just app opens), hide or rename any app, and manage all launcher data from the settings screen.
+
+<b>Weather</b>
+
+Weather is powered by Open-Meteo — no account or API key required. Results are cached for 30 minutes. Location permission is optional and only used for local weather.
+
+<b>Private Space (Android 15+)</b>
+
+On Android 15 and above (API 35+), Fokus supports Android's Private Space with lock/unlock controls and a separate section in the app drawer for private apps when the space is unlocked.
+
+<b>First-Run Onboarding</b>
+
+On first launch, Fokus walks you through welcome, optional location permission, default-launcher setup, home-screen customization, swipe-shortcut setup, and quick gesture tips.
+
+<b>Permissions</b>
+
+Fokus asks only for what it uses: app discovery, uninstall intents, weather fetches, optional local weather location, hidden-profile access for Private Space, and status-bar expansion.
