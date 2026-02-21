@@ -16,3 +16,4 @@ local.properties
 .vscode
 .keystore
 .cursor
+.kotlin

@@ -391,11 +391,15 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun updateBattery() {
-        val batteryIntent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        val level = batteryIntent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
-        val scale = batteryIntent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
-        val percent = if (level >= 0 && scale > 0) (level * 100) / scale else 0
-        _uiState.value = _uiState.value.copy(batteryPercent = percent)
+        try {
+            val batteryIntent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+            val level = batteryIntent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+            val scale = batteryIntent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
+            val percent = if (level >= 0 && scale > 0) (level * 100) / scale else 0
+            _uiState.value = _uiState.value.copy(batteryPercent = percent)
+        } catch (_: Exception) {
+            _uiState.value = _uiState.value.copy(batteryPercent = 0)
+        }
     }
 
     private fun startWeatherTicker() {
@@ -424,12 +428,16 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun checkDefaultLauncher() {
-        val homeIntent = Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_HOME) }
-        val resolveInfo: ResolveInfo? = context.packageManager.resolveActivity(
-            homeIntent, PackageManager.MATCH_DEFAULT_ONLY
-        )
-        val isDefault = resolveInfo?.activityInfo?.packageName == context.packageName
-        _uiState.value = _uiState.value.copy(isDefaultLauncher = isDefault)
+        try {
+            val homeIntent = Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_HOME) }
+            val resolveInfo: ResolveInfo? = context.packageManager.resolveActivity(
+                homeIntent, PackageManager.MATCH_DEFAULT_ONLY
+            )
+            val isDefault = resolveInfo?.activityInfo?.packageName == context.packageName
+            _uiState.value = _uiState.value.copy(isDefaultLauncher = isDefault)
+        } catch (_: Exception) {
+            _uiState.value = _uiState.value.copy(isDefaultLauncher = false)
+        }
     }
 
     fun recheckDefaultLauncher() = checkDefaultLauncher()

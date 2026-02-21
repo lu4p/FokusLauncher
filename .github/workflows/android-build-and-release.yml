@@ -35,6 +35,9 @@ jobs:
         with:
           packages: "tools platform-tools platforms;android-36 build-tools;36.0.0"
 
+      - name: Run debug unit tests
+        run: ./gradlew testDebugUnitTest
+
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug
 

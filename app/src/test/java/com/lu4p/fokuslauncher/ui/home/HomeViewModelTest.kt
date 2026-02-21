@@ -3,26 +3,26 @@ package com.lu4p.fokuslauncher.ui.home
 import android.content.Context
 import android.content.Intent
 import android.os.BatteryManager
-import app.cash.turbine.test
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
+import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
-import com.lu4p.fokuslauncher.utils.WallpaperHelper
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -38,7 +38,6 @@ class HomeViewModelTest {
     private lateinit var appRepository: AppRepository
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var weatherRepository: WeatherRepository
-    private lateinit var wallpaperHelper: WallpaperHelper
     private val testDispatcher = StandardTestDispatcher()
 
     private val testFavorites = listOf(
@@ -55,7 +54,6 @@ class HomeViewModelTest {
         appRepository = mockk(relaxed = true)
         preferencesManager = mockk(relaxed = true)
         weatherRepository = mockk(relaxed = true)
-        wallpaperHelper = mockk(relaxed = true)
 
         // Mock battery intent
         val batteryIntent = mockk<Intent>(relaxed = true)
@@ -68,7 +66,9 @@ class HomeViewModelTest {
         every { preferencesManager.showWallpaperFlow } returns flowOf(false)
         every { preferencesManager.swipeLeftTargetFlow } returns flowOf(null as ShortcutTarget?)
         every { preferencesManager.swipeRightTargetFlow } returns flowOf(null as ShortcutTarget?)
-        every { preferencesManager.rightSideShortcutsFlow } returns flowOf(emptyList())
+        every { preferencesManager.rightSideShortcutsFlow } returns flowOf(emptyList<HomeShortcut>())
+        every { preferencesManager.preferredWeatherAppFlow } returns flowOf("")
+        every { preferencesManager.weatherLocationOptedOutFlow } returns flowOf(false)
         every { preferencesManager.homeAlignmentFlow } returns flowOf(HomeAlignment.LEFT)
         coEvery { preferencesManager.ensureRightSideShortcutsInitialized() } returns Unit
         coEvery { preferencesManager.setFavorites(any()) } returns Unit
@@ -85,11 +85,11 @@ class HomeViewModelTest {
     }
 
     private fun createViewModel() = HomeViewModel(
-        context, appRepository, preferencesManager, weatherRepository, wallpaperHelper
+        context, appRepository, preferencesManager, weatherRepository
     )
 
     @Test
-    fun `initial state has battery percentage`() = runTest {
+    fun `initial state has battery percentage`() {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceTimeBy(100)
 
@@ -98,7 +98,7 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `initial state has formatted time`() = runTest {
+    fun `initial state has formatted time`() {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceTimeBy(1100)
 
@@ -107,7 +107,7 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `initial state has formatted date`() = runTest {
+    fun `initial state has formatted date`() {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceTimeBy(1100)
 
@@ -116,22 +116,24 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `favorites flow emits from preferences manager`() = runTest {
+    fun `favorites flow emits from preferences manager`() {
         val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        viewModel.favorites.test {
-            testDispatcher.scheduler.advanceUntilIdle()
-            val favorites = expectMostRecentItem()
-            assertEquals(3, favorites.size)
-            assertEquals("Music", favorites[0].categoryLabel)
-            assertEquals("com.lu4p.music", favorites[0].packageName)
-            cancelAndIgnoreRemainingEvents()
+        val collected = mutableListOf<List<FavoriteApp>>()
+        val collectJob = CoroutineScope(testDispatcher).launch {
+            viewModel.favorites.collect { collected += it }
         }
+        testDispatcher.scheduler.advanceTimeBy(200)
+        testDispatcher.scheduler.runCurrent()
+
+        val favorites = collected.lastOrNull().orEmpty()
+        assertEquals(3, favorites.size)
+        assertEquals("Music", favorites[0].categoryLabel)
+        assertEquals("com.lu4p.music", favorites[0].packageName)
+        collectJob.cancel()
     }
 
     @Test
-    fun `launchApp delegates to repository`() = runTest {
+    fun `launchApp delegates to repository`() {
         val viewModel = createViewModel()
 
         viewModel.launchApp("com.lu4p.music")
@@ -140,7 +142,7 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `refreshBattery updates battery percentage`() = runTest {
+    fun `refreshBattery updates battery percentage`() {
         val batteryIntent = mockk<Intent>(relaxed = true)
         every { batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) } returns 50
         every { batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1) } returns 100
@@ -156,7 +158,7 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `battery handles missing intent gracefully`() = runTest {
+    fun `battery handles missing intent gracefully`() {
         every { context.registerReceiver(null, any()) } returns null
 
         val viewModel = createViewModel()
@@ -166,27 +168,27 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `wallpaper setting is observed from preferences`() = runTest {
+    fun `wallpaper setting is observed from preferences`() {
         every { preferencesManager.showWallpaperFlow } returns flowOf(true)
 
         val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceTimeBy(200)
 
         assertTrue(viewModel.uiState.value.showWallpaper)
     }
 
     @Test
-    fun `wallpaper defaults to disabled`() = runTest {
+    fun `wallpaper defaults to disabled`() {
         every { preferencesManager.showWallpaperFlow } returns flowOf(false)
 
         val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceTimeBy(200)
 
         assertFalse(viewModel.uiState.value.showWallpaper)
     }
 
     @Test
-    fun `isDefaultLauncher is false when not the default home app`() = runTest {
+    fun `isDefaultLauncher is false when not the default home app`() {
         // With relaxed mocks, resolveActivity returns a mock whose packageName
         // won't match our package, so isDefaultLauncher should be false.
         val viewModel = createViewModel()
@@ -196,22 +198,25 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `refreshInstalledApps removes uninstalled favorites`() = runTest {
+    fun `refreshInstalledApps removes uninstalled favorites`() {
         every { appRepository.getInstalledApps() } returns listOf(
             AppInfo(packageName = "com.lu4p.music", label = "Music", icon = null)
         )
         val viewModel = createViewModel()
+        val collectJob = CoroutineScope(testDispatcher).launch {
+            viewModel.favorites.collect { }
+        }
+        testDispatcher.scheduler.runCurrent()
 
         viewModel.refreshInstalledApps()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify { appRepository.invalidateCache() }
-        coVerify {
+        verify(timeout = 2_000) { appRepository.invalidateCache() }
+        coVerify(timeout = 2_000) {
             preferencesManager.setFavorites(
                 match { favorites ->
                     favorites.size == 1 && favorites[0].packageName == "com.lu4p.music"
                 }
             )
         }
+        collectJob.cancel()
     }
 }

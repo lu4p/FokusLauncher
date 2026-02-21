@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
-import android.graphics.drawable.ColorDrawable
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
@@ -145,7 +144,7 @@ class AppRepositoryTest {
         val result = repository.launchApp("com.lu4p.app1")
 
         assertTrue(result)
-        verify { context.startActivity(launchIntent) }
+        verify { context.startActivity(launchIntent, null) }
     }
 
     @Test
@@ -314,14 +313,12 @@ class AppRepositoryTest {
     // --- Helper ---
 
     private fun createResolveInfo(packageName: String, label: String): ResolveInfo {
-        val activityInfo = ActivityInfo().apply {
-            this.packageName = packageName
-            this.name = "$packageName.MainActivity"
-        }
-        return mockk<ResolveInfo>(relaxed = true).apply {
-            this.activityInfo = activityInfo
-            every { loadLabel(any()) } returns label
-            every { loadIcon(any()) } returns ColorDrawable(0)
+        return ResolveInfo().apply {
+            activityInfo = ActivityInfo().apply {
+                this.packageName = packageName
+                this.name = "$packageName.MainActivity"
+            }
+            nonLocalizedLabel = label
         }
     }
 }

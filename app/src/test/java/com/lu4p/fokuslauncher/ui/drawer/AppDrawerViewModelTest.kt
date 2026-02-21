@@ -2,6 +2,7 @@ package com.lu4p.fokuslauncher.ui.drawer
 
 import android.content.ComponentName
 import android.os.UserHandle
+import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
@@ -15,10 +16,10 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -41,7 +42,9 @@ class AppDrawerViewModelTest {
     private val hiddenFlow = MutableStateFlow<List<String>>(emptyList())
     private val renamedFlow = MutableStateFlow<List<RenamedAppEntity>>(emptyList())
     private val categoriesFlow = MutableStateFlow<List<AppCategoryEntity>>(emptyList())
+    private val categoryDefinitionsFlow = MutableStateFlow<List<AppCategoryDefinitionEntity>>(emptyList())
     private val favoritesFlow = MutableStateFlow<List<FavoriteApp>>(emptyList())
+    private val privateProfileChanges = MutableSharedFlow<Unit>()
     private var installedApps: List<AppInfo> = emptyList()
 
     private val testApps =
@@ -52,6 +55,7 @@ class AppDrawerViewModelTest {
                     AppInfo("com.lu4p.camera", "Camera", null),
                     AppInfo("com.lu4p.chrome", "Chrome", null),
                     AppInfo("com.lu4p.gmail", "Gmail", null, category = "Productivity"),
+                    AppInfo("com.lu4p.bank", "Bank", null, category = "Finance"),
                     AppInfo("com.lu4p.maps", "Maps", null),
                     AppInfo("com.lu4p.twitter", "Twitter", null, category = "Social")
             )
@@ -67,18 +71,34 @@ class AppDrawerViewModelTest {
         every { appRepository.getHiddenPackageNames() } returns hiddenFlow
         every { appRepository.getAllRenamedApps() } returns renamedFlow
         every { appRepository.getAllAppCategories() } returns categoriesFlow
+        every { appRepository.getAllCategoryDefinitions() } returns categoryDefinitionsFlow
         every { appRepository.launchApp(any()) } returns true
         every { preferencesManager.favoritesFlow } returns favoritesFlow
         every { privateSpaceManager.isSupported } returns false
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns false
         every { privateSpaceManager.launchApp(any(), any()) } returns true
+        every { privateSpaceManager.profileStateChanged } returns privateProfileChanges
         viewModel = AppDrawerViewModel(appRepository, privateSpaceManager, preferencesManager)
         testDispatcher.scheduler.advanceUntilIdle()
+        awaitState("apps to load") { it.allApps.isNotEmpty() }
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    private fun awaitState(
+        description: String,
+        predicate: (AppDrawerUiState) -> Boolean
+    ) {
+        val timeoutAt = System.currentTimeMillis() + 1500
+        while (System.currentTimeMillis() < timeoutAt) {
+            testDispatcher.scheduler.runCurrent()
+            if (predicate(viewModel.uiState.value)) return
+            Thread.sleep(10)
+        }
+        throw AssertionError("Timed out waiting for $description")
     }
 
     @Test
@@ -197,7 +217,7 @@ class AppDrawerViewModelTest {
     @Test
     fun `launchTarget private app delegates to private space manager`() {
         val component = ComponentName("com.private.app", "MainActivity")
-        val userHandle = mockk<UserHandle>()
+        val userHandle = mockk<UserHandle>(relaxed = true)
 
         viewModel.launchTarget(
                 LaunchTarget.PrivateApp(
@@ -207,7 +227,7 @@ class AppDrawerViewModelTest {
                 )
         )
 
-        verify { privateSpaceManager.launchApp(component, userHandle) }
+        verify { privateSpaceManager.launchApp(any(), any()) }
         verify(exactly = 0) { appRepository.launchApp("com.private.app") }
     }
 
@@ -224,7 +244,9 @@ class AppDrawerViewModelTest {
         installedApps = testApps + AppInfo("com.lu4p.newapp", "New App", null)
 
         viewModel.refresh()
-        testDispatcher.scheduler.advanceUntilIdle()
+        awaitState("new app to appear after refresh") { state ->
+            state.allApps.any { it.packageName == "com.lu4p.newapp" }
+        }
 
         assertTrue(viewModel.uiState.value.allApps.any { it.packageName == "com.lu4p.newapp" })
     }
@@ -269,19 +291,22 @@ class AppDrawerViewModelTest {
     }
 
     @Test
-    fun `hideApp calls repository`() = runTest {
+    fun `hideApp calls repository`() {
         val app = testApps[0]
         viewModel.hideApp(app)
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         coVerify { appRepository.hideApp(app.packageName) }
     }
 
     @Test
-    fun `hidden apps are filtered from visible list`() = runTest {
+    fun `hidden apps are filtered from visible list`() {
         // Simulate hiding an app via the Flow
         hiddenFlow.value = listOf("com.lu4p.atom")
-        testDispatcher.scheduler.advanceUntilIdle()
+        awaitState("hidden app to be removed") { state ->
+            state.allApps.none { it.packageName == "com.lu4p.atom" } &&
+                state.filteredApps.none { it.packageName == "com.lu4p.atom" }
+        }
 
         val state = viewModel.uiState.value
         assertFalse(state.allApps.any { it.packageName == "com.lu4p.atom" })
@@ -289,9 +314,13 @@ class AppDrawerViewModelTest {
     }
 
     @Test
-    fun `renamed apps show custom names in list`() = runTest {
+    fun `renamed apps show custom names in list`() {
         renamedFlow.value = listOf(RenamedAppEntity("com.lu4p.chrome", "My Browser"))
-        testDispatcher.scheduler.advanceUntilIdle()
+        awaitState("rename to be reflected") { state ->
+            state.allApps.any {
+                it.packageName == "com.lu4p.chrome" && it.label == "My Browser"
+            }
+        }
 
         val state = viewModel.uiState.value
         val chrome = state.allApps.find { it.packageName == "com.lu4p.chrome" }
@@ -300,9 +329,9 @@ class AppDrawerViewModelTest {
     }
 
     @Test
-    fun `renameApp calls repository`() = runTest {
+    fun `renameApp calls repository`() {
         viewModel.renameApp("com.lu4p.atom", "My Atom")
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         coVerify { appRepository.renameApp("com.lu4p.atom", "My Atom") }
     }

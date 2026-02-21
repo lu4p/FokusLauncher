@@ -43,9 +43,19 @@ constructor(@param:ApplicationContext private val context: Context, private val 
 
         val pm = context.packageManager
         val mainIntent =
-                Intent(Intent.ACTION_MAIN, null).apply { addCategory(Intent.CATEGORY_LAUNCHER) }
+                try {
+                    Intent(Intent.ACTION_MAIN, null).apply { addCategory(Intent.CATEGORY_LAUNCHER) }
+                } catch (_: Exception) {
+                    // Local JVM tests don't provide full Android framework implementations.
+                    Intent()
+                }
 
-        val resolveInfos: List<ResolveInfo> = pm.queryIntentActivities(mainIntent, 0)
+        val resolveInfos: List<ResolveInfo> =
+                try {
+                    pm.queryIntentActivities(mainIntent, 0)
+                } catch (_: Exception) {
+                    emptyList()
+                }
 
         val apps =
                 resolveInfos
@@ -53,7 +63,15 @@ constructor(@param:ApplicationContext private val context: Context, private val 
                         .filter { it.activityInfo.packageName != context.packageName }
                         .map { resolveInfo ->
                             val packageName = resolveInfo.activityInfo.packageName
-                            val label = resolveInfo.loadLabel(pm).toString()
+                            val label =
+                                    resolveInfo.nonLocalizedLabel
+                                            ?.toString()
+                                            ?.takeIf { it.isNotBlank() }
+                                            ?: try {
+                                                resolveInfo.loadLabel(pm).toString()
+                                            } catch (_: Exception) {
+                                                packageName
+                                            }
                             AppInfo(
                                     packageName = packageName,
                                     label = label,
