@@ -72,7 +72,6 @@ class HomeViewModelTest {
         // Mock preferences using Fake
         preferencesManager = mockk(relaxed = true)
         every { preferencesManager.favoritesFlow } returns flowOf(testFavorites)
-        every { preferencesManager.showWallpaperFlow } returns flowOf(false)
         every { preferencesManager.swipeLeftTargetFlow } returns flowOf(null as ShortcutTarget?)
         every { preferencesManager.swipeRightTargetFlow } returns flowOf(null as ShortcutTarget?)
         every { preferencesManager.rightSideShortcutsFlow } returns flowOf(emptyList<HomeShortcut>())
@@ -216,26 +215,6 @@ class HomeViewModelTest {
         testDispatcher.scheduler.advanceTimeBy(100)
 
         assertEquals(42, viewModel.uiState.value.batteryPercent)
-    }
-
-    @Test
-    fun `wallpaper setting is observed from preferences`() {
-        every { preferencesManager.showWallpaperFlow } returns flowOf(true)
-
-        val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceTimeBy(200)
-
-        assertTrue(viewModel.uiState.value.showWallpaper)
-    }
-
-    @Test
-    fun `wallpaper defaults to disabled`() {
-        every { preferencesManager.showWallpaperFlow } returns flowOf(false)
-
-        val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceTimeBy(200)
-
-        assertFalse(viewModel.uiState.value.showWallpaper)
     }
 
     @Test

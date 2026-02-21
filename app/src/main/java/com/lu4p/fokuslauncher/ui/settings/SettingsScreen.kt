@@ -118,27 +118,7 @@ fun SettingsScreen(
 
             // ========== APPEARANCE ==========
             item { SectionHeader("Appearance") }
-            
-            item {
-                Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp, vertical = 14.dp)
-                ) {
-                    Text(
-                            text = "Show system wallpaper on home screen",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.weight(1f)
-                    )
-                    androidx.compose.material3.Switch(
-                            checked = uiState.showWallpaper,
-                            onCheckedChange = { viewModel.setShowWallpaper(it) }
-                    )
-                }
-            }
-            
+
             item {
                 Row(
                         verticalAlignment = Alignment.CenterVertically,

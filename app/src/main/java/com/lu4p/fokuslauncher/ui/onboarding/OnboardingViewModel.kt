@@ -95,14 +95,10 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch { preferencesManager.setSwipeRightTarget(target) }
     }
 
-    fun setShowWallpaper(show: Boolean) {
-        viewModelScope.launch { preferencesManager.setShowWallpaper(show) }
-    }
-
     fun setBlackWallpaper() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Create a larger black bitmap to ensure it applies correctly
+                // Create a full-screen black bitmap
                 val width = context.resources.displayMetrics.widthPixels
                 val height = context.resources.displayMetrics.heightPixels
                 val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
@@ -110,20 +106,16 @@ class OnboardingViewModel @Inject constructor(
                 canvas.drawColor(AndroidColor.BLACK)
 
                 val wallpaperManager = WallpaperManager.getInstance(context)
-                // Set for both home screen and lock screen (if supported)
+                // Set for home screen
                 wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
+                // Try to set for lock screen too
                 try {
                     wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK)
                 } catch (_: Exception) {
                     // Lock screen wallpaper may fail on some devices, ignore
                 }
-
-                // Also set launcher to show black (not transparent)
-                preferencesManager.setShowWallpaper(false)
             } catch (e: Exception) {
                 e.printStackTrace()
-                // If setting wallpaper fails, at least set the launcher preference
-                preferencesManager.setShowWallpaper(false)
             }
         }
     }

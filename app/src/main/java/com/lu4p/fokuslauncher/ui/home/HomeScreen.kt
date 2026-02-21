@@ -167,7 +167,7 @@ fun HomeScreenContent(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(if (uiState.showWallpaper) Color.Transparent else Color.Black)
+            .background(Color.Transparent)
             .combinedClickable(
                 indication = null,
                 interactionSource = noIndication,

@@ -37,7 +37,6 @@ data class SettingsUiState(
         val swipeRightTarget: ShortcutTarget? = null,
         val preferredWeatherAppPackage: String = "",
         val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
-        val showWallpaper: Boolean = false,
         val allApps: List<AppInfo> = emptyList()
 )
 
@@ -98,16 +97,9 @@ constructor(
                     .combine(preferencesManager.preferredWeatherAppFlow) { swipeState, preferredWeatherApp ->
                         Pair(swipeState, preferredWeatherApp)
                     }
-                    .combine(preferencesManager.showWallpaperFlow) { previousState, showWallpaper ->
-                        val (swipeState, preferredWeatherApp) = previousState
+                    .combine(preferencesManager.homeAlignmentFlow) { weatherState, homeAlignment ->
+                        val (swipeState, preferredWeatherApp) = weatherState
                         val (leftState, swipeRight) = swipeState
-                        Pair(Triple(leftState, swipeRight, preferredWeatherApp), showWallpaper)
-                    }
-                    .combine(preferencesManager.homeAlignmentFlow) {
-                            weatherStateAndWallpaper,
-                            homeAlignment ->
-                        val (weatherState, showWallpaper) = weatherStateAndWallpaper
-                        val (leftState, swipeRight, preferredWeatherApp) = weatherState
                         val allApps = appRepository.getInstalledApps()
                         val hiddenInfos =
                                 leftState.base.hiddenNames.map { pkg ->
@@ -125,7 +117,6 @@ constructor(
                                 swipeRightTarget = swipeRight,
                                 preferredWeatherAppPackage = preferredWeatherApp,
                                 homeAlignment = homeAlignment,
-                                showWallpaper = showWallpaper,
                                 allApps = allApps
                         )
                     }
@@ -202,10 +193,6 @@ constructor(
         appRepository.invalidateCache()
     }
 
-    fun setShowWallpaper(show: Boolean) {
-        viewModelScope.launch { preferencesManager.setShowWallpaper(show) }
-    }
-
     fun setSystemWallpaper(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -213,8 +200,6 @@ constructor(
                 context.contentResolver.openInputStream(uri)?.use { stream ->
                     wallpaperManager.setStream(stream)
                 }
-                // Optionally auto-enable the wallpaper toggle so the user sees their change
-                preferencesManager.setShowWallpaper(true)
             } catch (e: Exception) {
                 // Ignore or handle error
             }
@@ -240,13 +225,8 @@ constructor(
                 } catch (_: Exception) {
                     // Lock screen wallpaper may fail on some devices, ignore
                 }
-
-                // Also update the UI state
-                preferencesManager.setShowWallpaper(false)
             } catch (e: Exception) {
                 e.printStackTrace()
-                // If setting wallpaper fails, at least set the launcher preference
-                preferencesManager.setShowWallpaper(false)
             }
         }
     }

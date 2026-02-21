@@ -95,7 +95,6 @@ fun FokusNavGraph(
     navGraphViewModel: FokusNavGraphViewModel = hiltViewModel()
 ) {
     val hasCompletedOnboarding by navGraphViewModel.hasCompletedOnboarding.collectAsStateWithLifecycle()
-    val showWallpaper by navGraphViewModel.showWallpaper.collectAsStateWithLifecycle()
 
     if (!hasCompletedOnboarding) {
         OnboardingScreen(
@@ -173,7 +172,7 @@ fun FokusNavGraph(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(if (showWallpaper) Color.Transparent else Color.Black)
+            .background(Color.Transparent)
     ) {
         // ── Main navigation (Home + Settings) ──────────────────────
         NavHost(

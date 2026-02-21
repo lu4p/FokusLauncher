@@ -49,7 +49,6 @@ data class HomeUiState(
     val batteryPercent: Int = 0,
     val weather: WeatherData? = null,
     val showWeatherWidget: Boolean = false,
-    val showWallpaper: Boolean = false,
     val isDefaultLauncher: Boolean = true,
     val homeAlignment: HomeAlignment = HomeAlignment.LEFT
 )
@@ -139,7 +138,6 @@ class HomeViewModel @Inject constructor(
         startClockTicker()
         updateBattery()
         startWeatherTicker()
-        observeWallpaperSetting()
         observeHomeAlignment()
         checkDefaultLauncher()
         refreshInstalledApps()
@@ -407,14 +405,6 @@ class HomeViewModel @Inject constructor(
             while (true) {
                 fetchWeatherOnce()
                 delay(30 * 60 * 1000L)
-            }
-        }
-    }
-
-    private fun observeWallpaperSetting() {
-        viewModelScope.launch {
-            preferencesManager.showWallpaperFlow.collect { show ->
-                _uiState.value = _uiState.value.copy(showWallpaper = show)
             }
         }
     }

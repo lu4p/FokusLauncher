@@ -108,7 +108,6 @@ fun OnboardingScreen(
                         viewModel.onNext()
                     },
                     onChooseWallpaper = {
-                        viewModel.setShowWallpaper(true)
                         viewModel.onNext()
                     }
                 )
