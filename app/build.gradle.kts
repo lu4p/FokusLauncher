@@ -44,12 +44,18 @@ android {
     namespace = "com.lu4p.fokuslauncher"
     compileSdk { version = release(36) }
 
+    // Disable dependency metadata in APK signing block (required for F-Droid)
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
     defaultConfig {
         applicationId = "io.github.luantak.fokuslauncher"
         minSdk = 26
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.0.6"
+        versionCode = 7
+        versionName = "1.0.7"
 
         testInstrumentationRunner = "io.github.luantak.fokuslauncher.HiltTestRunner"
     }
