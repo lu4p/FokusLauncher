@@ -69,6 +69,7 @@ import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 fun SettingsScreen(
         viewModel: SettingsViewModel = hiltViewModel(),
         onNavigateBack: () -> Unit = {},
+        onNavigateToHome: () -> Unit = {},
         onEditHomeScreen: () -> Unit = {},
         onEditRightShortcuts: () -> Unit = {},
         onEditCategories: () -> Unit = {},
@@ -83,7 +84,10 @@ fun SettingsScreen(
     val wallpaperPickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { viewModel.setSystemWallpaper(it) }
+        uri?.let {
+            viewModel.setSystemWallpaper(it)
+            onNavigateToHome()
+        }
     }
 
     Column(modifier = Modifier
@@ -143,6 +147,26 @@ fun SettingsScreen(
                 ) {
                     Text(
                             text = "Set background image",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            item {
+                Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setBlackWallpaper()
+                                    onNavigateToHome()
+                                }
+                                .padding(horizontal = 24.dp, vertical = 14.dp)
+                ) {
+                    Text(
+                            text = "Set black wallpaper",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier.weight(1f)

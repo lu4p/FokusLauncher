@@ -11,7 +11,11 @@ import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import android.app.WallpaperManager
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color as AndroidColor
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -207,7 +211,7 @@ constructor(
     fun setSystemWallpaper(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val wallpaperManager = android.app.WallpaperManager.getInstance(context)
+                val wallpaperManager = WallpaperManager.getInstance(context)
                 context.contentResolver.openInputStream(uri)?.use { stream ->
                     wallpaperManager.setStream(stream)
                 }
@@ -215,6 +219,36 @@ constructor(
                 preferencesManager.setShowWallpaper(true)
             } catch (e: Exception) {
                 // Ignore or handle error
+            }
+        }
+    }
+
+    fun setBlackWallpaper() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Create a full-screen black bitmap
+                val width = context.resources.displayMetrics.widthPixels
+                val height = context.resources.displayMetrics.heightPixels
+                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bitmap)
+                canvas.drawColor(AndroidColor.BLACK)
+
+                val wallpaperManager = WallpaperManager.getInstance(context)
+                // Set for home screen
+                wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
+                // Try to set for lock screen too
+                try {
+                    wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK)
+                } catch (_: Exception) {
+                    // Lock screen wallpaper may fail on some devices, ignore
+                }
+
+                // Also update the UI state
+                preferencesManager.setShowWallpaper(false)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // If setting wallpaper fails, at least set the launcher preference
+                preferencesManager.setShowWallpaper(false)
             }
         }
     }

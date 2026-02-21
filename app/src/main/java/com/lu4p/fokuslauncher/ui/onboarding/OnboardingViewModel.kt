@@ -1,9 +1,13 @@
 package com.lu4p.fokuslauncher.ui.onboarding
 
+import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color as AndroidColor
 import android.provider.Settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -26,6 +30,7 @@ import javax.inject.Inject
 
 enum class OnboardingStep {
     WELCOME,
+    BACKGROUND,
     LOCATION,
     SET_DEFAULT_LAUNCHER,
     CUSTOMIZE_HOME,
@@ -55,6 +60,7 @@ class OnboardingViewModel @Inject constructor(
         if (isDefault) {
             listOf(
                 OnboardingStep.WELCOME,
+                OnboardingStep.BACKGROUND,
                 OnboardingStep.LOCATION,
                 OnboardingStep.CUSTOMIZE_HOME,
                 OnboardingStep.SWIPE_SHORTCUTS,
@@ -63,6 +69,7 @@ class OnboardingViewModel @Inject constructor(
         } else {
             listOf(
                 OnboardingStep.WELCOME,
+                OnboardingStep.BACKGROUND,
                 OnboardingStep.LOCATION,
                 OnboardingStep.SET_DEFAULT_LAUNCHER,
                 OnboardingStep.CUSTOMIZE_HOME,
@@ -92,6 +99,39 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch { preferencesManager.setSwipeRightTarget(target) }
     }
 
+    fun setShowWallpaper(show: Boolean) {
+        viewModelScope.launch { preferencesManager.setShowWallpaper(show) }
+    }
+
+    fun setBlackWallpaper() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Create a larger black bitmap to ensure it applies correctly
+                val width = context.resources.displayMetrics.widthPixels
+                val height = context.resources.displayMetrics.heightPixels
+                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bitmap)
+                canvas.drawColor(AndroidColor.BLACK)
+
+                val wallpaperManager = WallpaperManager.getInstance(context)
+                // Set for both home screen and lock screen (if supported)
+                wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
+                try {
+                    wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK)
+                } catch (_: Exception) {
+                    // Lock screen wallpaper may fail on some devices, ignore
+                }
+
+                // Also set launcher to show black (not transparent)
+                preferencesManager.setShowWallpaper(false)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // If setting wallpaper fails, at least set the launcher preference
+                preferencesManager.setShowWallpaper(false)
+            }
+        }
+    }
+
     val currentStep: StateFlow<OnboardingStep?> = combine(
         steps,
         _currentStepIndex
@@ -113,8 +153,8 @@ class OnboardingViewModel @Inject constructor(
                 val reached = preferencesManager.getOnboardingReachedSetDefault()
                 if (reached) {
                     preferencesManager.setOnboardingReachedSetDefault(false)
-                    // Restore to CUSTOMIZE_HOME (index 2 in 5-step flow without SET_DEFAULT_LAUNCHER)
-                    _currentStepIndex.value = 2
+                    // Restore to CUSTOMIZE_HOME (index 3 in 6-step flow without SET_DEFAULT_LAUNCHER)
+                    _currentStepIndex.value = 3
                 }
             }
         }

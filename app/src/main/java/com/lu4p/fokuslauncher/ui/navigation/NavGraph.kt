@@ -413,6 +413,10 @@ fun FokusNavGraph(
             ) {
                 SettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
+                    onNavigateToHome = {
+                        showDrawer = false
+                        navController.popBackStack(Routes.HOME, inclusive = false)
+                    },
                     onEditHomeScreen = {
                         navController.navigate(Routes.SETTINGS_EDIT_HOME_APPS) { launchSingleTop = true }
                     },

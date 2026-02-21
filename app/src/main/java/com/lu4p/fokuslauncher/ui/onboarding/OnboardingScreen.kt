@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -21,7 +22,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.ButtonDefaults
@@ -99,6 +102,16 @@ fun OnboardingScreen(
                 OnboardingStep.WELCOME -> WelcomeStep(
                     onGetStarted = { viewModel.onNext() }
                 )
+                OnboardingStep.BACKGROUND -> BackgroundStep(
+                    onChooseBlack = {
+                        viewModel.setBlackWallpaper()
+                        viewModel.onNext()
+                    },
+                    onChooseWallpaper = {
+                        viewModel.setShowWallpaper(true)
+                        viewModel.onNext()
+                    }
+                )
                 OnboardingStep.LOCATION -> LocationStep(
                     onAllow = {
                         locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -130,7 +143,7 @@ fun OnboardingScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            if (currentStep != OnboardingStep.CUSTOMIZE_HOME && currentStep != OnboardingStep.LOCATION && currentStep != OnboardingStep.SWIPE_SHORTCUTS && !isLastStep) {
+            if (currentStep != OnboardingStep.BACKGROUND && currentStep != OnboardingStep.CUSTOMIZE_HOME && currentStep != OnboardingStep.LOCATION && currentStep != OnboardingStep.SWIPE_SHORTCUTS && !isLastStep) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -186,6 +199,93 @@ private fun WelcomeStep(onGetStarted: () -> Unit) {
             )
         ) {
             Text(text = stringResource(R.string.onboarding_get_started))
+        }
+    }
+}
+
+@Composable
+private fun BackgroundStep(
+    onChooseBlack: () -> Unit,
+    onChooseWallpaper: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = stringResource(R.string.onboarding_background_title),
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.onboarding_background_subtitle),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(40.dp))
+
+        // Option 1: Black background
+        androidx.compose.material3.OutlinedCard(
+            onClick = onChooseBlack,
+            modifier = Modifier.fillMaxWidth(0.85f),
+            colors = androidx.compose.material3.CardDefaults.outlinedCardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = androidx.compose.material3.CardDefaults.outlinedCardBorder()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = stringResource(R.string.onboarding_background_black),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Option 2: Keep wallpaper
+        androidx.compose.material3.OutlinedCard(
+            onClick = onChooseWallpaper,
+            modifier = Modifier.fillMaxWidth(0.85f),
+            colors = androidx.compose.material3.CardDefaults.outlinedCardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = androidx.compose.material3.CardDefaults.outlinedCardBorder()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Image,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = stringResource(R.string.onboarding_background_wallpaper),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
     }
 }
